@@ -23,13 +23,22 @@
   .eyebrow{color:var(--red);font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;}
   .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
 
-  .info-banner{
-    background:#0f1f2a;border-bottom:1px solid #1c3a4d;color:#7ec4e8;
-    font-size:12.5px;line-height:1.6;padding:14px 24px;text-align:center;
+  #statusLog{
+    background:#0d1a0d;border-bottom:1px solid #1c3a1c;color:#8fd98f;
+    font-family:'SF Mono', Menlo, monospace;font-size:11px;line-height:1.7;
+    padding:12px 16px;max-height:160px;overflow-y:auto;
   }
-  .info-banner b{color:#a9dcf5;}
+  #statusLog .err{color:#ff8a8a;}
+  #statusLog .ok{color:#8fd98f;}
+  #statusLog p{margin:0;word-break:break-word;}
 
-  #loginScreen{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+  #fatalBanner{
+    display:none;background:#3a1414;border-bottom:2px solid var(--red);color:#ffb3b3;
+    font-size:13.5px;line-height:1.7;padding:18px 20px;
+  }
+  #fatalBanner b{color:#fff;}
+
+  #loginScreen{min-height:70vh;display:flex;align-items:center;justify-content:center;padding:30px 20px;}
   .login-card{width:100%;max-width:380px;background:var(--bg-alt);border:1px solid var(--border);padding:36px 32px;text-align:center;}
   .login-card h1{font-size:24px;margin:10px 0 6px;}
   .login-card p{color:var(--grey-dim);font-size:12.5px;margin-bottom:24px;}
@@ -44,7 +53,7 @@
   }
   .login-card button:hover{background:var(--red-hover);}
   .login-card button:disabled{opacity:.5;cursor:not-allowed;}
-  .login-error{color:var(--red);font-size:12px;margin-top:12px;min-height:14px;}
+  .login-error{color:var(--red);font-size:12.5px;margin-top:14px;min-height:14px;font-weight:600;}
   .login-hint{color:var(--grey-dim);font-size:11px;margin-top:18px;line-height:1.6;text-align:left;background:var(--bg);padding:12px;border:1px solid var(--border);}
 
   #dashboard{display:none;}
@@ -59,14 +68,13 @@
   .btn-ghost{background:transparent;color:var(--grey-dim);font-size:11.5px;text-decoration:underline;padding:0;}
   .btn-ghost:hover{color:var(--white);}
 
-  .admin-tabs{display:flex;gap:6px;margin:26px 0;border-bottom:1px solid var(--border);}
+  .admin-tabs{display:flex;gap:6px;margin:26px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
   .admin-tab{background:transparent;color:var(--grey);padding:12px 18px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-bottom:2px solid transparent;}
   .admin-tab.active{color:var(--white);border-bottom-color:var(--red);}
   .admin-panel{display:none;padding-bottom:60px;}
   .admin-panel.active{display:block;}
 
   .empty-state{background:var(--bg-card);border:1px dashed #333;padding:40px 24px;text-align:center;color:var(--grey-dim);font-size:13px;margin-bottom:16px;}
-  .empty-state button{margin-top:14px;}
 
   .product-row{display:grid;grid-template-columns:110px 1fr auto;gap:20px;background:var(--bg-card);border:1px solid var(--border);padding:18px;margin-bottom:16px;}
   .product-photo-col{display:flex;flex-direction:column;align-items:center;gap:8px;}
@@ -111,20 +119,19 @@
 </head>
 <body>
 
-<div class="info-banner">
-  🔥 Cet espace est connecté à ta base de données <b>Firebase</b>. Toute modification est visible <b>immédiatement par tous tes visiteurs</b>, sur n'importe quel appareil.
-</div>
-
-<div id="fbErrorBanner" style="display:none;background:#3a1414;border-bottom:1px solid #4a2020;color:#ff9b9b;font-size:13px;line-height:1.6;padding:16px 24px;text-align:center;"></div>
+<div id="statusLog"><p>Démarrage de la page...</p></div>
+<div id="fatalBanner"></div>
 
 <div id="loginScreen">
   <div class="login-card">
     <span class="eyebrow">KOBA FITNESS</span>
     <h1 class="display">Espace admin</h1>
     <p>Connecte-toi avec ton compte administrateur.</p>
-    <input type="email" id="adminEmailInput" placeholder="Email">
-    <input type="password" id="adminPassInput" placeholder="Mot de passe">
-    <button id="adminLoginBtn">SE CONNECTER</button>
+    <form id="loginForm">
+      <input type="email" id="adminEmailInput" placeholder="Email" autocomplete="username" required>
+      <input type="password" id="adminPassInput" placeholder="Mot de passe" autocomplete="current-password" required>
+      <button type="submit" id="adminLoginBtn">SE CONNECTER</button>
+    </form>
     <p class="login-error" id="loginError"></p>
     <p class="login-hint">
       Pas encore de compte admin ? Dans la <b>console Firebase</b> → Authentication →
@@ -172,7 +179,7 @@
       <div class="settings-block">
         <p>Connecté en tant que : <b id="currentUserEmail">—</b></p>
       </div>
-      <div style="margin-top:24px;max-width:420px;" id="seedBlock">
+      <div style="margin-top:24px;max-width:420px;">
         <button class="btn btn-outline" id="seedBtn">IMPORTER LES PRODUITS DE DÉPART</button>
         <p style="color:var(--grey-dim);font-size:11.5px;margin-top:8px;">
           À utiliser une seule fois si ta boutique est vide (ajoute le T-shirt Kavkaz + le code promo BIENVENUE10).
@@ -182,54 +189,114 @@
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script src="shop-data.js"></script>
-<script src="seed-data.js"></script>
+<script>
+  const statusLog = document.getElementById('statusLog');
+  const fatalBanner = document.getElementById('fatalBanner');
+
+  function log(msg, isError){
+    const p = document.createElement('p');
+    p.className = isError ? 'err' : 'ok';
+    p.textContent = (isError ? '✗ ' : '✓ ') + msg;
+    statusLog.appendChild(p);
+    statusLog.scrollTop = statusLog.scrollHeight;
+  }
+
+  function showFatal(title, detail){
+    fatalBanner.style.display = 'block';
+    fatalBanner.innerHTML = '<b>⚠️ ' + title + '</b><br>' + detail;
+  }
+
+  window.addEventListener('error', function(e){
+    log('Erreur JS non gérée : ' + e.message + ' (' + (e.filename || '') + ':' + (e.lineno || '') + ')', true);
+    showFatal("Une erreur technique bloque la page", "Détail : " + e.message + "<br>Fichier : " + (e.filename || 'inconnu') + ", ligne " + (e.lineno || '?'));
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+    log('Erreur promesse non gérée : ' + reason, true);
+    showFatal("Une opération a échoué silencieusement", "Détail : " + reason);
+  });
+
+  log('Page chargée, initialisation...');
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js" onerror="log('Échec du chargement du SDK Firebase (app). Vérifie ta connexion internet.', true); showFatal('Le SDK Firebase n\'a pas pu se charger', 'Ton réseau ou un bloqueur bloque peut-être www.gstatic.com.');"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js" onerror="log('Échec du chargement du SDK Firebase (firestore).', true);"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js" onerror="log('Échec du chargement du SDK Firebase (auth).', true);"></script>
+
+<script>
+  log('Scripts Firebase (CDN) demandés.');
+
+  window.kobaFirebaseReady = false;
+  window.kobaFirebaseError = null;
+  let db, auth;
+
+  try {
+    if (typeof firebase === 'undefined') {
+      throw new Error("L'objet global 'firebase' est introuvable — le SDK ne s'est pas chargé.");
+    }
+    const firebaseConfig = {
+      apiKey: "AIzaSyBBAz4v1OOHjQgseII04sgDuJZoVUZ7RVc",
+      authDomain: "koba-fitness.firebaseapp.com",
+      projectId: "koba-fitness",
+      storageBucket: "koba-fitness.firebasestorage.app",
+      messagingSenderId: "716452609196",
+      appId: "1:716452609196:web:0a40b3117059350eeaf309",
+      measurementId: "G-DQLM4DVR36"
+    };
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    db = firebase.firestore();
+    auth = firebase.auth();
+    window.db = db;
+    window.auth = auth;
+    window.kobaFirebaseReady = true;
+    log('Firebase initialisé avec succès.');
+  } catch (err) {
+    window.kobaFirebaseError = err.message || String(err);
+    log('Échec d\'initialisation Firebase : ' + window.kobaFirebaseError, true);
+    showFatal("Firebase n'a pas pu démarrer", err.message);
+  }
+</script>
+
 <script>
   const loginScreen = document.getElementById('loginScreen');
   const dashboard = document.getElementById('dashboard');
   const loginError = document.getElementById('loginError');
+  const loginForm = document.getElementById('loginForm');
   const loginBtn = document.getElementById('adminLoginBtn');
-  const fbErrorBanner = document.getElementById('fbErrorBanner');
 
-  // ---- Vérification que Firebase a bien démarré ----
-  if (!window.kobaFirebaseReady) {
-    fbErrorBanner.style.display = 'block';
-    fbErrorBanner.innerHTML = '⚠️ Impossible de charger Firebase : ' +
-      (window.kobaFirebaseError || 'erreur inconnue') +
-      '<br>Vérifie ta connexion internet et recharge la page. Si le problème persiste, vérifie que le fichier <b>firebase-config.js</b> est bien présent dans le même dossier que cette page.';
-    loginBtn.disabled = true;
-    loginBtn.textContent = 'INDISPONIBLE';
-  }
+  log('Attache du formulaire de connexion...');
 
-  loginBtn.addEventListener('click', ()=>{
+  loginForm.addEventListener('submit', function(event){
+    event.preventDefault();
+    log('Formulaire de connexion soumis.');
+    loginError.textContent = '';
+
     if (!window.kobaFirebaseReady) {
-      loginError.textContent = "Firebase n'est pas disponible pour le moment (voir le message ci-dessus).";
+      loginError.textContent = "Firebase n'est pas disponible (voir le journal ci-dessus).";
+      log('Tentative de connexion bloquée : Firebase indisponible.', true);
       return;
     }
+
     const email = document.getElementById('adminEmailInput').value.trim();
     const pass = document.getElementById('adminPassInput').value;
-    loginError.textContent = '';
-    loginBtn.disabled = true;
-    loginBtn.textContent = 'CONNEXION...';
 
-    let signInPromise;
-    try {
-      signInPromise = auth.signInWithEmailAndPassword(email, pass);
-    } catch (syncErr) {
-      console.error('Erreur synchrone à la connexion:', syncErr);
-      loginError.textContent = "Erreur inattendue : " + syncErr.message;
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'SE CONNECTER';
+    if (!email || !pass) {
+      loginError.textContent = "Renseigne un email et un mot de passe.";
       return;
     }
 
-    signInPromise
-      .catch(err => {
-        console.error('Firebase auth error:', err.code, err.message);
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'CONNEXION...';
+    log('Envoi de la demande de connexion à Firebase pour ' + email + '...');
+
+    auth.signInWithEmailAndPassword(email, pass)
+      .then(function(cred){
+        log('Connexion réussie pour ' + cred.user.email + '.');
+      })
+      .catch(function(err){
+        log('Connexion refusée : ' + err.code + ' — ' + err.message, true);
         const messages = {
           'auth/wrong-password': "Mot de passe incorrect.",
           'auth/invalid-credential': "Email ou mot de passe incorrect.",
@@ -238,26 +305,27 @@
           'auth/invalid-email': "Adresse email invalide.",
           'auth/unauthorized-domain': "Ce domaine n'est pas autorisé dans Firebase (Authentication → Settings → Authorized domains).",
           'auth/too-many-requests': "Trop de tentatives. Réessaie dans quelques minutes.",
-          'auth/network-request-failed': "Problème de connexion réseau. Vérifie ta connexion internet.",
+          'auth/network-request-failed': "Problème de connexion réseau.",
           'auth/operation-not-allowed': "La connexion par email/mot de passe n'est pas activée dans Firebase (Authentication → Sign-in method)."
         };
         loginError.textContent = messages[err.code] || ("Erreur : " + err.message + " (code : " + err.code + ")");
       })
-      .finally(() => {
+      .finally(function(){
         loginBtn.disabled = false;
         loginBtn.textContent = 'SE CONNECTER';
       });
   });
 
-  document.getElementById('adminPassInput').addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter') loginBtn.click();
+  log('Formulaire de connexion prêt.');
+
+  document.getElementById('logoutBtn').addEventListener('click', function(){
+    if (window.kobaFirebaseReady) auth.signOut();
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', ()=>{ if(window.kobaFirebaseReady) auth.signOut(); });
-
   if (window.kobaFirebaseReady) {
-    auth.onAuthStateChanged(user => {
-      if(user){
+    auth.onAuthStateChanged(function(user){
+      if (user) {
+        log('Session active détectée : ' + user.email);
         loginScreen.style.display = 'none';
         dashboard.style.display = 'block';
         document.getElementById('currentUserEmail').textContent = user.email;
@@ -265,13 +333,15 @@
         renderPromosPanel();
         renderMessagesPanel();
       } else {
+        log('Aucune session active — écran de connexion affiché.');
         loginScreen.style.display = 'flex';
         dashboard.style.display = 'none';
       }
     });
   }
+</script>
 
-  // ---- Onglets ----
+<script>
   document.querySelectorAll('.admin-tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
       document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
@@ -281,11 +351,28 @@
     });
   });
 
-  // ---- Produits ----
+  function escapeHtml(str){ return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escapeAttr(str){ return (str || '').replace(/"/g,'&quot;'); }
+
+  async function getProducts(){
+    const snapshot = await db.collection('products').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+  async function addProduct(product){ return db.collection('products').add(product); }
+  async function updateProduct(id, data){ return db.collection('products').doc(id).update(data); }
+  async function deleteProduct(id){ return db.collection('products').doc(id).delete(); }
+
   async function renderProductsPanel(){
     const list = document.getElementById('productsList');
     list.innerHTML = '<p class="loading">Chargement...</p>';
-    const products = await getProducts();
+    let products;
+    try{
+      products = await getProducts();
+    } catch(err){
+      list.innerHTML = '<div class="empty-state">Erreur de chargement : ' + err.message + '</div>';
+      log('Erreur chargement produits : ' + err.message, true);
+      return;
+    }
 
     if(products.length === 0){
       list.innerHTML = '<div class="empty-state">Aucun produit pour l\'instant.<br>Utilise "Importer les produits de départ" dans Paramètres, ou ajoute un produit ci-dessous.</div>';
@@ -386,17 +473,12 @@
   }
 
   document.getElementById('addProductBtn').addEventListener('click', async ()=>{
-    const placeholderImg = (typeof SEED_PRODUCTS !== 'undefined' && SEED_PRODUCTS[0]) ? SEED_PRODUCTS[0].image : '';
     try{
+      const products = await getProducts();
+      const placeholderImg = products[0] ? products[0].image : '';
       await addProduct({
-        name: 'NOUVEAU PRODUIT',
-        variant: '',
-        description: '',
-        price: 0,
-        image: placeholderImg,
-        category: 'tshirts',
-        tag: '',
-        featured: false
+        name: 'NOUVEAU PRODUIT', variant: '', description: '', price: 0,
+        image: placeholderImg, category: 'tshirts', tag: '', featured: false
       });
       renderProductsPanel();
     } catch(err){
@@ -404,14 +486,27 @@
     }
   });
 
-  // ---- Codes promo ----
+  async function getPromos(){
+    const snapshot = await db.collection('promos').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+  async function addPromo(promo){ return db.collection('promos').add(promo); }
+  async function updatePromo(id, data){ return db.collection('promos').doc(id).update(data); }
+  async function deletePromo(id){ return db.collection('promos').doc(id).delete(); }
+
   async function renderPromosPanel(){
     const list = document.getElementById('promosList');
     list.innerHTML = '<p class="loading">Chargement...</p>';
-    const promos = await getPromos();
+    let promos;
+    try{
+      promos = await getPromos();
+    } catch(err){
+      list.innerHTML = '<div class="empty-state">Erreur de chargement : ' + err.message + '</div>';
+      return;
+    }
 
     if(promos.length === 0){
-      list.innerHTML = '<div class="empty-state">Aucun code promo pour l\\'instant.</div>';
+      list.innerHTML = '<div class="empty-state">Aucun code promo pour l\'instant.</div>';
       return;
     }
 
@@ -475,7 +570,12 @@
     }
   });
 
-  // ---- Messages de contact ----
+  async function getMessages(){
+    const snapshot = await db.collection('messages').orderBy('createdAt', 'desc').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+  async function deleteMessage(id){ return db.collection('messages').doc(id).delete(); }
+
   async function renderMessagesPanel(){
     const list = document.getElementById('messagesList');
     list.innerHTML = '<p class="loading">Chargement...</p>';
@@ -488,7 +588,7 @@
     }
 
     if(messages.length === 0){
-      list.innerHTML = '<div class="empty-state">Aucun message pour l\\'instant.</div>';
+      list.innerHTML = '<div class="empty-state">Aucun message pour l\'instant.</div>';
       return;
     }
 
@@ -522,18 +622,29 @@
     });
   }
 
-  // ---- Seed ----
   document.getElementById('seedBtn').addEventListener('click', async ()=>{
     const btn = document.getElementById('seedBtn');
     btn.disabled = true;
     btn.textContent = 'IMPORT EN COURS...';
     try{
-      const result = await seedDefaultDataIfNeeded();
-      if(!result.products && !result.promos){
-        alert("Ta boutique contient déjà des produits et/ou des codes promo — rien n'a été ajouté pour éviter les doublons.");
-      } else {
-        alert("Import terminé !");
+      const productsSnap = await db.collection('products').limit(1).get();
+      const promosSnap = await db.collection('promos').limit(1).get();
+      let didSomething = false;
+
+      if(productsSnap.empty && typeof SEED_PRODUCTS !== 'undefined'){
+        const batch = db.batch();
+        SEED_PRODUCTS.forEach(p => batch.set(db.collection('products').doc(), p));
+        await batch.commit();
+        didSomething = true;
       }
+      if(promosSnap.empty && typeof SEED_PROMOS !== 'undefined'){
+        const batch = db.batch();
+        SEED_PROMOS.forEach(p => batch.set(db.collection('promos').doc(), p));
+        await batch.commit();
+        didSomething = true;
+      }
+
+      alert(didSomething ? "Import terminé !" : "Ta boutique contient déjà des produits et/ou des codes promo — rien n'a été ajouté pour éviter les doublons.");
       renderProductsPanel();
       renderPromosPanel();
     } catch(err){
@@ -542,10 +653,9 @@
     btn.disabled = false;
     btn.textContent = 'IMPORTER LES PRODUITS DE DÉPART';
   });
-
-  function escapeHtml(str){ return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function escapeAttr(str){ return (str || '').replace(/"/g,'&quot;'); }
 </script>
+
+<script src="seed-data.js" onerror="log('seed-data.js introuvable (non bloquant, juste pour le bouton import).', true);"></script>
 
 </body>
 </html>
