@@ -205,43 +205,49 @@
     loginBtn.textContent = 'INDISPONIBLE';
   }
 
-  loginBtn.addEventListener('click', ()=>{
-    if (!window.kobaFirebaseReady) {
-      loginError.textContent = "Firebase n'est pas disponible pour le moment (voir le message ci-dessus).";
+  // ---- Écouteur du bouton de connexion corrigé ----
+  loginBtn.addEventListener('click', () => {
+    console.log("Clic sur le bouton connexion détecté !");
+
+    // Récupération sécurisée du service Firebase Auth
+    const firebaseAuth = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
+
+    if (!firebaseAuth) {
+      console.error("Firebase Auth n'est pas disponible.");
+      loginError.textContent = "Erreur : Firebase Auth n'est pas initialisé (vérifie firebase-config.js).";
       return;
     }
+
     const email = document.getElementById('adminEmailInput').value.trim();
     const pass = document.getElementById('adminPassInput').value;
+
+    if (!email || !pass) {
+      loginError.textContent = "Veuillez saisir votre email et mot de passe.";
+      return;
+    }
+
     loginError.textContent = '';
     loginBtn.disabled = true;
     loginBtn.textContent = 'CONNEXION...';
 
-    let signInPromise;
-    try {
-      signInPromise = auth.signInWithEmailAndPassword(email, pass);
-    } catch (syncErr) {
-      console.error('Erreur synchrone à la connexion:', syncErr);
-      loginError.textContent = "Erreur inattendue : " + syncErr.message;
-      loginBtn.disabled = false;
-      loginBtn.textContent = 'SE CONNECTER';
-      return;
-    }
-
-    signInPromise
+    firebaseAuth.signInWithEmailAndPassword(email, pass)
+      .then(userCredential => {
+        console.log('Connecté avec succès !', userCredential.user);
+      })
       .catch(err => {
-        console.error('Firebase auth error:', err.code, err.message);
+        console.error('Erreur Firebase auth:', err.code, err.message);
         const messages = {
           'auth/wrong-password': "Mot de passe incorrect.",
           'auth/invalid-credential': "Email ou mot de passe incorrect.",
           'auth/invalid-login-credentials': "Email ou mot de passe incorrect.",
-          'auth/user-not-found': "Aucun compte admin trouvé avec cet email. Crée-le dans Firebase → Authentication → Users.",
+          'auth/user-not-found': "Aucun compte admin trouvé avec cet email.",
           'auth/invalid-email': "Adresse email invalide.",
           'auth/unauthorized-domain': "Ce domaine n'est pas autorisé dans Firebase (Authentication → Settings → Authorized domains).",
           'auth/too-many-requests': "Trop de tentatives. Réessaie dans quelques minutes.",
-          'auth/network-request-failed': "Problème de connexion réseau. Vérifie ta connexion internet.",
-          'auth/operation-not-allowed': "La connexion par email/mot de passe n'est pas activée dans Firebase (Authentication → Sign-in method)."
+          'auth/network-request-failed': "Problème de connexion réseau.",
+          'auth/operation-not-allowed': "La connexion par email/mot de passe n'est pas activée dans la console Firebase."
         };
-        loginError.textContent = messages[err.code] || ("Erreur : " + err.message + " (code : " + err.code + ")");
+        loginError.textContent = messages[err.code] || ("Erreur : " + err.message);
       })
       .finally(() => {
         loginBtn.disabled = false;
@@ -249,15 +255,20 @@
       });
   });
 
-  document.getElementById('adminPassInput').addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter') loginBtn.click();
+  document.getElementById('adminPassInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loginBtn.click();
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', ()=>{ if(window.kobaFirebaseReady) auth.signOut(); });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    const firebaseAuth = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
+    if (firebaseAuth) firebaseAuth.signOut();
+  });
 
-  if (window.kobaFirebaseReady) {
-    auth.onAuthStateChanged(user => {
-      if(user){
+  // ---- Écouteur de changement d'état de connexion ----
+  const currentAuth = window.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
+  if (currentAuth) {
+    currentAuth.onAuthStateChanged(user => {
+      if (user) {
         loginScreen.style.display = 'none';
         dashboard.style.display = 'block';
         document.getElementById('currentUserEmail').textContent = user.email;
@@ -272,10 +283,10 @@
   }
 
   // ---- Onglets ----
-  document.querySelectorAll('.admin-tab').forEach(tab=>{
-    tab.addEventListener('click', ()=>{
-      document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
-      document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
       tab.classList.add('active');
       document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
     });
@@ -288,7 +299,7 @@
     const products = await getProducts();
 
     if(products.length === 0){
-      list.innerHTML = '<div class="empty-state">Aucun produit pour l\\'instant.<br>Utilise "Importer les produits de départ" dans Paramètres, ou ajoute un produit ci-dessous.</div>';
+      list.innerHTML = '<div class="empty-state">Aucun produit pour l\'instant.<br>Utilise "Importer les produits de départ" dans Paramètres, ou ajoute un produit ci-dessous.</div>';
       return;
     }
 
@@ -311,7 +322,7 @@
               <label>Catégories</label>
               <div class="cat-checks">
                 ${['tshirts','sweats','joggers','nouveautes'].map(c => `
-                  <label><input type="checkbox" class="f-cat" value="${c}" ${(p.category||'').includes(c) ? 'checked' : ''}> ${c}</label>
+                  <label><input type="checkbox" class="f-cat" value="${c}" ${(p.category\vert{}\vert{}'').includes(c) ? 'checked' : ''}>${c}</label>
                 `).join('')}
               </div>
             </div>
@@ -328,8 +339,8 @@
       </div>
     `).join('');
 
-    list.querySelectorAll('.photo-input').forEach(input=>{
-      input.addEventListener('change', (e)=>{
+    list.querySelectorAll('.photo-input').forEach(input => {
+      input.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if(!file) return;
         const reader = new FileReader();
@@ -342,8 +353,8 @@
       });
     });
 
-    list.querySelectorAll('.save-product-btn').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
+    list.querySelectorAll('.save-product-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
         const row = btn.closest('.product-row');
         const id = row.dataset.id;
         btn.disabled = true;
@@ -362,7 +373,7 @@
           await updateProduct(id, data);
           const flash = row.querySelector('.save-flash');
           flash.classList.add('show');
-          setTimeout(()=> flash.classList.remove('show'), 1800);
+          setTimeout(() => flash.classList.remove('show'), 1800);
         } catch(err){
           alert("Erreur lors de l'enregistrement : " + err.message);
         }
@@ -371,8 +382,8 @@
       });
     });
 
-    list.querySelectorAll('.delete-product-btn').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
+    list.querySelectorAll('.delete-product-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
         if(!confirm('Supprimer définitivement ce produit ?')) return;
         const row = btn.closest('.product-row');
         try{
@@ -385,7 +396,7 @@
     });
   }
 
-  document.getElementById('addProductBtn').addEventListener('click', async ()=>{
+  document.getElementById('addProductBtn').addEventListener('click', async () => {
     const placeholderImg = (typeof SEED_PRODUCTS !== 'undefined' && SEED_PRODUCTS[0]) ? SEED_PRODUCTS[0].image : '';
     try{
       await addProduct({
@@ -411,7 +422,7 @@
     const promos = await getPromos();
 
     if(promos.length === 0){
-      list.innerHTML = '<div class="empty-state">Aucun code promo pour l\\'instant.</div>';
+      list.innerHTML = '<div class="empty-state">Aucun code promo pour l\'instant.</div>';
       return;
     }
 
@@ -434,8 +445,8 @@
       </div>
     `).join('');
 
-    list.querySelectorAll('.save-promo-btn').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
+    list.querySelectorAll('.save-promo-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
         const row = btn.closest('.promo-row-admin');
         const id = row.dataset.id;
         try{
@@ -452,8 +463,8 @@
       });
     });
 
-    list.querySelectorAll('.delete-promo-btn').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
+    list.querySelectorAll('.delete-promo-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
         if(!confirm('Supprimer ce code promo ?')) return;
         const row = btn.closest('.promo-row-admin');
         try{
@@ -466,7 +477,7 @@
     });
   }
 
-  document.getElementById('addPromoBtn').addEventListener('click', async ()=>{
+  document.getElementById('addPromoBtn').addEventListener('click', async () => {
     try{
       await addPromo({ code: 'NOUVEAUCODE', type: 'percent', value: 10, active: true });
       renderPromosPanel();
@@ -488,7 +499,7 @@
     }
 
     if(messages.length === 0){
-      list.innerHTML = '<div class="empty-state">Aucun message pour l\\'instant.</div>';
+      list.innerHTML = '<div class="empty-state">Aucun message pour l\'instant.</div>';
       return;
     }
 
@@ -508,8 +519,8 @@
       `;
     }).join('');
 
-    list.querySelectorAll('.delete-message-btn').forEach(btn=>{
-      btn.addEventListener('click', async ()=>{
+    list.querySelectorAll('.delete-message-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
         if(!confirm('Supprimer ce message ?')) return;
         const row = btn.closest('.product-row');
         try{
@@ -523,7 +534,7 @@
   }
 
   // ---- Seed ----
-  document.getElementById('seedBtn').addEventListener('click', async ()=>{
+  document.getElementById('seedBtn').addEventListener('click', async () => {
     const btn = document.getElementById('seedBtn');
     btn.disabled = true;
     btn.textContent = 'IMPORT EN COURS...';
