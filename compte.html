@@ -226,33 +226,43 @@
   const authForms = document.getElementById('authForms');
   const loggedInView = document.getElementById('loggedInView');
 
+  if (!window.kobaFirebaseReady) {
+    googleError.textContent = "Connexion Google indisponible pour le moment (problème réseau). Réessaie plus tard.";
+  }
+
   googleBtn.addEventListener('click', ()=>{
+    if (!window.kobaFirebaseReady) {
+      googleError.textContent = "Connexion Google indisponible pour le moment (problème réseau). Réessaie plus tard.";
+      return;
+    }
     const provider = new firebase.auth.GoogleAuthProvider();
     googleError.textContent = '';
     googleBtn.disabled = true;
     auth.signInWithPopup(provider)
       .catch(err => {
         console.error(err);
-        googleError.textContent = "La connexion a échoué. Réessaie.";
+        googleError.textContent = "La connexion a échoué : " + (err.message || 'erreur inconnue');
       })
       .finally(()=> { googleBtn.disabled = false; });
   });
 
-  document.getElementById('logoutGoogleBtn').addEventListener('click', ()=> auth.signOut());
+  document.getElementById('logoutGoogleBtn').addEventListener('click', ()=>{ if(window.kobaFirebaseReady) auth.signOut(); });
 
-  auth.onAuthStateChanged(user => {
-    if(user){
-      authForms.style.display = 'none';
-      loggedInView.style.display = 'block';
-      const name = user.displayName || user.email;
-      document.getElementById('loggedInName').textContent = 'Bienvenue, ' + name.split(' ')[0] + ' !';
-      document.getElementById('loggedInEmail').textContent = user.email || '';
-      document.getElementById('loggedInAvatar').textContent = name.charAt(0).toUpperCase();
-    } else {
-      authForms.style.display = 'block';
-      loggedInView.style.display = 'none';
-    }
-  });
+  if (window.kobaFirebaseReady) {
+    auth.onAuthStateChanged(user => {
+      if(user){
+        authForms.style.display = 'none';
+        loggedInView.style.display = 'block';
+        const name = user.displayName || user.email;
+        document.getElementById('loggedInName').textContent = 'Bienvenue, ' + name.split(' ')[0] + ' !';
+        document.getElementById('loggedInEmail').textContent = user.email || '';
+        document.getElementById('loggedInAvatar').textContent = name.charAt(0).toUpperCase();
+      } else {
+        authForms.style.display = 'block';
+        loggedInView.style.display = 'none';
+      }
+    });
+  }
 </script>
 
 </body>

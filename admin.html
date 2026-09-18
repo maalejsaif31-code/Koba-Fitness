@@ -115,6 +115,8 @@
   🔥 Cet espace est connecté à ta base de données <b>Firebase</b>. Toute modification est visible <b>immédiatement par tous tes visiteurs</b>, sur n'importe quel appareil.
 </div>
 
+<div id="fbErrorBanner" style="display:none;background:#3a1414;border-bottom:1px solid #4a2020;color:#ff9b9b;font-size:13px;line-height:1.6;padding:16px 24px;text-align:center;"></div>
+
 <div id="loginScreen">
   <div class="login-card">
     <span class="eyebrow">KOBA FITNESS</span>
@@ -185,14 +187,41 @@
   const dashboard = document.getElementById('dashboard');
   const loginError = document.getElementById('loginError');
   const loginBtn = document.getElementById('adminLoginBtn');
+  const fbErrorBanner = document.getElementById('fbErrorBanner');
+
+  // ---- Vérification que Firebase a bien démarré ----
+  if (!window.kobaFirebaseReady) {
+    fbErrorBanner.style.display = 'block';
+    fbErrorBanner.innerHTML = '⚠️ Impossible de charger Firebase : ' +
+      (window.kobaFirebaseError || 'erreur inconnue') +
+      '<br>Vérifie ta connexion internet et recharge la page. Si le problème persiste, vérifie que le fichier <b>firebase-config.js</b> est bien présent dans le même dossier que cette page.';
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'INDISPONIBLE';
+  }
 
   loginBtn.addEventListener('click', ()=>{
+    if (!window.kobaFirebaseReady) {
+      loginError.textContent = "Firebase n'est pas disponible pour le moment (voir le message ci-dessus).";
+      return;
+    }
     const email = document.getElementById('adminEmailInput').value.trim();
     const pass = document.getElementById('adminPassInput').value;
     loginError.textContent = '';
     loginBtn.disabled = true;
     loginBtn.textContent = 'CONNEXION...';
-    auth.signInWithEmailAndPassword(email, pass)
+
+    let signInPromise;
+    try {
+      signInPromise = auth.signInWithEmailAndPassword(email, pass);
+    } catch (syncErr) {
+      console.error('Erreur synchrone à la connexion:', syncErr);
+      loginError.textContent = "Erreur inattendue : " + syncErr.message;
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'SE CONNECTER';
+      return;
+    }
+
+    signInPromise
       .catch(err => {
         console.error('Firebase auth error:', err.code, err.message);
         const messages = {
@@ -218,20 +247,22 @@
     if(e.key === 'Enter') loginBtn.click();
   });
 
-  document.getElementById('logoutBtn').addEventListener('click', ()=> auth.signOut());
+  document.getElementById('logoutBtn').addEventListener('click', ()=>{ if(window.kobaFirebaseReady) auth.signOut(); });
 
-  auth.onAuthStateChanged(user => {
-    if(user){
-      loginScreen.style.display = 'none';
-      dashboard.style.display = 'block';
-      document.getElementById('currentUserEmail').textContent = user.email;
-      renderProductsPanel();
-      renderPromosPanel();
-    } else {
-      loginScreen.style.display = 'flex';
-      dashboard.style.display = 'none';
-    }
-  });
+  if (window.kobaFirebaseReady) {
+    auth.onAuthStateChanged(user => {
+      if(user){
+        loginScreen.style.display = 'none';
+        dashboard.style.display = 'block';
+        document.getElementById('currentUserEmail').textContent = user.email;
+        renderProductsPanel();
+        renderPromosPanel();
+      } else {
+        loginScreen.style.display = 'flex';
+        dashboard.style.display = 'none';
+      }
+    });
+  }
 
   // ---- Onglets ----
   document.querySelectorAll('.admin-tab').forEach(tab=>{
