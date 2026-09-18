@@ -146,6 +146,7 @@
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="products">Produits</button>
       <button class="admin-tab" data-tab="promos">Codes promo</button>
+      <button class="admin-tab" data-tab="messages">Messages</button>
       <button class="admin-tab" data-tab="settings">Paramètres</button>
     </div>
 
@@ -159,6 +160,11 @@
       <p class="section-label">Crée et gère les codes promo utilisables au paiement</p>
       <div id="promosList"><p class="loading">Chargement...</p></div>
       <button class="add-product-btn" id="addPromoBtn">＋ AJOUTER UN CODE PROMO</button>
+    </div>
+
+    <div class="admin-panel" id="panel-messages">
+      <p class="section-label">Messages envoyés depuis le formulaire de contact du site</p>
+      <div id="messagesList"><p class="loading">Chargement...</p></div>
     </div>
 
     <div class="admin-panel" id="panel-settings">
@@ -257,6 +263,7 @@
         document.getElementById('currentUserEmail').textContent = user.email;
         renderProductsPanel();
         renderPromosPanel();
+        renderMessagesPanel();
       } else {
         loginScreen.style.display = 'flex';
         dashboard.style.display = 'none';
@@ -467,6 +474,53 @@
       alert("Erreur lors de l'ajout : " + err.message);
     }
   });
+
+  // ---- Messages de contact ----
+  async function renderMessagesPanel(){
+    const list = document.getElementById('messagesList');
+    list.innerHTML = '<p class="loading">Chargement...</p>';
+    let messages;
+    try{
+      messages = await getMessages();
+    } catch(err){
+      list.innerHTML = '<div class="empty-state">Erreur de chargement : ' + err.message + '</div>';
+      return;
+    }
+
+    if(messages.length === 0){
+      list.innerHTML = '<div class="empty-state">Aucun message pour l\\'instant.</div>';
+      return;
+    }
+
+    list.innerHTML = messages.map(m => {
+      const date = m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toLocaleString('fr-FR') : '—';
+      return `
+        <div class="product-row" data-id="${m.id}" style="grid-template-columns:1fr auto;">
+          <div>
+            <p style="font-size:13px;font-weight:700;margin-bottom:4px;">${escapeHtml(m.name || 'Sans nom')} — <span style="color:var(--grey-dim);font-weight:400;">${escapeHtml(m.email || '')}</span></p>
+            <p style="font-size:11.5px;color:var(--grey-dim);margin-bottom:8px;">${escapeHtml(m.subject || 'Sans sujet')} · ${date}</p>
+            <p style="font-size:13px;color:var(--grey);white-space:pre-wrap;">${escapeHtml(m.message || '')}</p>
+          </div>
+          <div class="product-actions">
+            <button class="btn-danger delete-message-btn">SUPPRIMER</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.delete-message-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Supprimer ce message ?')) return;
+        const row = btn.closest('.product-row');
+        try{
+          await deleteMessage(row.dataset.id);
+          renderMessagesPanel();
+        } catch(err){
+          alert("Erreur lors de la suppression : " + err.message);
+        }
+      });
+    });
+  }
 
   // ---- Seed ----
   document.getElementById('seedBtn').addEventListener('click', async ()=>{

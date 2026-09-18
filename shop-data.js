@@ -85,6 +85,15 @@ async function seedDefaultDataIfNeeded(){
   return results;
 }
 
+async function getMessages(){
+  const snapshot = await db.collection('messages').orderBy('createdAt', 'desc').get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+async function deleteMessage(id){
+  return db.collection('messages').doc(id).delete();
+}
+
 function formatPrice(n){
   return n.toFixed(2).replace('.', ',') + ' \u20ac';
 }

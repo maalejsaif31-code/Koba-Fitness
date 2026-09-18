@@ -147,7 +147,7 @@
         <button class="auth-tab" data-target="signup">Inscription</button>
       </div>
 
-      <form class="auth-form active" id="login" onsubmit="return handleAuthSubmit(event, 'Connexion');">
+      <form class="auth-form active" id="login" onsubmit="return handleLoginSubmit(event);">
         <div class="field">
           <label for="login-email">Email</label>
           <input type="email" id="login-email" placeholder="toi@exemple.com" required>
@@ -158,13 +158,14 @@
         </div>
         <div class="remember-row">
           <label><input type="checkbox" style="width:auto;"> Se souvenir de moi</label>
-          <a href="#">Mot de passe oublié ?</a>
+          <a href="#" onclick="handleForgotPassword(); return false;">Mot de passe oublié ?</a>
         </div>
-        <button type="submit" class="submit-btn">SE CONNECTER</button>
+        <button type="submit" class="submit-btn" id="loginSubmitBtn">SE CONNECTER</button>
+        <p class="login-error" id="loginFormError" style="color:var(--red);font-size:12px;text-align:center;min-height:14px;"></p>
         <p class="form-note">Pas encore de compte ? <a href="#" onclick="switchTab('signup'); return false;" style="color:var(--white);text-decoration:underline;">Inscris-toi</a></p>
       </form>
 
-      <form class="auth-form" id="signup" onsubmit="return handleAuthSubmit(event, 'Inscription');">
+      <form class="auth-form" id="signup" onsubmit="return handleSignupSubmit(event);">
         <div class="field-row">
           <div class="field">
             <label for="signup-firstname">Prénom</label>
@@ -183,7 +184,8 @@
           <label for="signup-password">Mot de passe</label>
           <input type="password" id="signup-password" placeholder="8 caractères minimum" required minlength="8">
         </div>
-        <button type="submit" class="submit-btn">CRÉER MON COMPTE</button>
+        <button type="submit" class="submit-btn" id="signupSubmitBtn">CRÉER MON COMPTE</button>
+        <p class="login-error" id="signupFormError" style="color:var(--red);font-size:12px;text-align:center;min-height:14px;"></p>
         <p class="form-note">Déjà un compte ? <a href="#" onclick="switchTab('login'); return false;" style="color:var(--white);text-decoration:underline;">Connecte-toi</a></p>
       </form>
     </div>
@@ -212,12 +214,95 @@
     tab.addEventListener('click', ()=> switchTab(tab.dataset.target));
   });
 
-  // ⚠️ Les formulaires email/mot de passe restent une démo (pas encore connectés).
-  // Pour les activer aussi, il faudra créer les comptes correspondants dans Firebase Auth.
-  function handleAuthSubmit(event, type){
+  // ---- Traduction des erreurs Firebase en messages compréhensibles ----
+  function friendlyAuthError(err){
+    const messages = {
+      'auth/wrong-password': "Mot de passe incorrect.",
+      'auth/invalid-credential': "Email ou mot de passe incorrect.",
+      'auth/invalid-login-credentials': "Email ou mot de passe incorrect.",
+      'auth/user-not-found': "Aucun compte ne correspond à cet email.",
+      'auth/invalid-email': "Adresse email invalide.",
+      'auth/email-already-in-use': "Un compte existe déjà avec cet email. Connecte-toi plutôt.",
+      'auth/weak-password': "Mot de passe trop faible (8 caractères minimum).",
+      'auth/too-many-requests': "Trop de tentatives. Réessaie dans quelques minutes.",
+      'auth/network-request-failed': "Problème de connexion réseau.",
+      'auth/operation-not-allowed': "La connexion par email/mot de passe n'est pas activée sur ce site."
+    };
+    return messages[err.code] || ("Erreur : " + err.message);
+  }
+
+  // ---- Connexion réelle par email/mot de passe (Firebase Auth) ----
+  function handleLoginSubmit(event){
     event.preventDefault();
-    alert(type + " : cette démo front-end n'est pas encore connectée à un système de comptes réel. Utilise plutôt \"Continuer avec Google\" ci-dessus, qui fonctionne déjà.");
+    const errorEl = document.getElementById('loginFormError');
+    const btn = document.getElementById('loginSubmitBtn');
+    errorEl.textContent = '';
+
+    if (!window.kobaFirebaseReady) {
+      errorEl.textContent = "Connexion indisponible pour le moment (problème réseau).";
+      return false;
+    }
+
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    btn.disabled = true;
+    btn.textContent = 'CONNEXION...';
+
+    auth.signInWithEmailAndPassword(email, password)
+      .catch(err => { errorEl.textContent = friendlyAuthError(err); })
+      .finally(() => { btn.disabled = false; btn.textContent = 'SE CONNECTER'; });
+
     return false;
+  }
+
+  // ---- Inscription réelle par email/mot de passe (Firebase Auth) ----
+  function handleSignupSubmit(event){
+    event.preventDefault();
+    const errorEl = document.getElementById('signupFormError');
+    const btn = document.getElementById('signupSubmitBtn');
+    errorEl.textContent = '';
+
+    if (!window.kobaFirebaseReady) {
+      errorEl.textContent = "Inscription indisponible pour le moment (problème réseau).";
+      return false;
+    }
+
+    const firstName = document.getElementById('signup-firstname').value.trim();
+    const lastName = document.getElementById('signup-lastname').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    btn.disabled = true;
+    btn.textContent = 'CRÉATION...';
+
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(cred => cred.user.updateProfile({ displayName: (firstName + ' ' + lastName).trim() }))
+      .catch(err => { errorEl.textContent = friendlyAuthError(err); })
+      .finally(() => { btn.disabled = false; btn.textContent = 'CRÉER MON COMPTE'; });
+
+    return false;
+  }
+
+  // ---- Mot de passe oublié (réel, via Firebase Auth) ----
+  function handleForgotPassword(){
+    const errorEl = document.getElementById('loginFormError');
+    const email = document.getElementById('login-email').value.trim();
+    if (!window.kobaFirebaseReady) {
+      errorEl.textContent = "Indisponible pour le moment (problème réseau).";
+      return;
+    }
+    if (!email) {
+      errorEl.textContent = "Renseigne ton email ci-dessus d'abord, puis clique à nouveau.";
+      return;
+    }
+    auth.sendPasswordResetEmail(email)
+      .then(() => {
+        errorEl.style.color = '#4caf50';
+        errorEl.textContent = "Email de réinitialisation envoyé ! Vérifie ta boîte mail.";
+      })
+      .catch(err => {
+        errorEl.style.color = '';
+        errorEl.textContent = friendlyAuthError(err);
+      });
   }
 
   // ---- Connexion Google (réelle, via Firebase Auth) ----

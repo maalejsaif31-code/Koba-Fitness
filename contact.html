@@ -155,7 +155,8 @@
           <label for="contact-message">Message</label>
           <textarea id="contact-message" rows="6" placeholder="Écris ton message ici..." required></textarea>
         </div>
-        <button type="submit" class="submit-btn">ENVOYER LE MESSAGE</button>
+        <button type="submit" class="submit-btn" id="contactSubmitBtn">ENVOYER LE MESSAGE</button>
+        <p id="contactFormMsg" style="font-size:12.5px;text-align:center;margin-top:10px;min-height:14px;"></p>
       </form>
 
     </div>
@@ -209,13 +210,47 @@
 <script src="shop-data.js"></script>
 <script src="cart.js"></script>
 <script>
-  // ⚠️ Formulaire de démonstration : le message n'est pas réellement envoyé.
-  // Pour recevoir de vrais messages, il faut brancher un service comme Formspree,
-  // EmailJS, ou un backend qui envoie l'email/le stocke.
+  // ---- Formulaire de contact réel : les messages sont enregistrés dans Firestore ----
   function handleContactSubmit(event){
     event.preventDefault();
-    alert("Merci pour ton message ! (Démo front-end : aucun email n'est réellement envoyé pour l'instant — il faudra brancher un service comme Formspree ou EmailJS.)");
-    event.target.reset();
+    const msgEl = document.getElementById('contactFormMsg');
+    const btn = document.getElementById('contactSubmitBtn');
+    msgEl.style.color = '';
+    msgEl.textContent = '';
+
+    if (!window.kobaFirebaseReady) {
+      msgEl.style.color = 'var(--red)';
+      msgEl.textContent = "Envoi indisponible pour le moment (problème réseau). Réessaie plus tard.";
+      return false;
+    }
+
+    const name = document.getElementById('contact-name').value.trim();
+    const email = document.getElementById('contact-email').value.trim();
+    const subject = document.getElementById('contact-subject').value.trim();
+    const message = document.getElementById('contact-message').value.trim();
+
+    btn.disabled = true;
+    btn.textContent = 'ENVOI...';
+
+    db.collection('messages').add({
+      name, email, subject, message,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
+      .then(() => {
+        msgEl.style.color = '#4caf50';
+        msgEl.textContent = "Message envoyé ! On te répond au plus vite.";
+        event.target.reset();
+      })
+      .catch(err => {
+        console.error(err);
+        msgEl.style.color = 'var(--red)';
+        msgEl.textContent = "Erreur lors de l'envoi : " + err.message;
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'ENVOYER LE MESSAGE';
+      });
+
     return false;
   }
 </script>
