@@ -18,7 +18,9 @@ const firebaseConfig = {
   measurementId: "G-DQLM4DVR36"
 };
 
-let db, auth;
+// Initialisation des propriétés sur l'objet global window
+window.db = null;
+window.auth = null;
 window.kobaFirebaseReady = false;
 window.kobaFirebaseError = null;
 
@@ -26,9 +28,18 @@ try {
   if (typeof firebase === 'undefined') {
     throw new Error("Le SDK Firebase ne s'est pas chargé (problème réseau, bloqueur de scripts, ou fichier manquant).");
   }
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-  auth = firebase.auth();
+
+  // Évite la re-initialisation si Firebase est déjà prêt
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+
+  // Déclaration explicite en portées globale et locale
+  var db = firebase.firestore();
+  var auth = firebase.auth();
+
+  window.db = db;
+  window.auth = auth;
   window.kobaFirebaseReady = true;
 } catch (err) {
   console.error('Erreur d\'initialisation Firebase:', err);
