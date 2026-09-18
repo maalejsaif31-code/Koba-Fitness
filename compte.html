@@ -116,57 +116,77 @@
 </header>
 
 <main>
-  <div class="auth-card">
+  <div class="auth-card" id="authCard">
     <div class="auth-head">
       <span class="eyebrow">KOBA FITNESS</span>
       <h1 class="display">Mon compte</h1>
       <p>Connecte-toi ou crée un compte pour suivre tes commandes.</p>
     </div>
 
-    <div class="auth-tabs">
-      <button class="auth-tab active" data-target="login">Connexion</button>
-      <button class="auth-tab" data-target="signup">Inscription</button>
+    <div id="loggedInView" style="display:none;padding:28px 32px 36px;text-align:center;">
+      <div style="width:56px;height:56px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:22px;font-weight:800;" id="loggedInAvatar"></div>
+      <p style="font-size:15px;font-weight:700;margin-bottom:4px;" id="loggedInName"></p>
+      <p style="font-size:12.5px;color:var(--grey-dim);margin-bottom:24px;" id="loggedInEmail"></p>
+      <a href="boutique.html" class="submit-btn" style="display:block;text-decoration:none;margin-bottom:12px;">VOIR LA BOUTIQUE</a>
+      <button type="button" class="auth-tab" style="width:100%;border:1px solid var(--border);" id="logoutGoogleBtn">SE DÉCONNECTER</button>
     </div>
 
-    <form class="auth-form active" id="login" onsubmit="return handleAuthSubmit(event, 'Connexion');">
-      <div class="field">
-        <label for="login-email">Email</label>
-        <input type="email" id="login-email" placeholder="toi@exemple.com" required>
+    <div id="authForms">
+      <div style="padding:28px 32px 0;">
+        <button type="button" id="googleSignInBtn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1f1f1f;padding:13px;font-size:13px;font-weight:700;border:1px solid var(--border);">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.92c1.7-1.57 2.68-3.88 2.68-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.27c-.81.54-1.85.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34C2.44 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.97 10.71c-.18-.54-.28-1.11-.28-1.71s.1-1.17.28-1.71V4.95H.96C.35 6.17 0 7.55 0 9s.35 2.83.96 4.05l3.01-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.95l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+          Continuer avec Google
+        </button>
+        <p class="login-error" id="googleError" style="color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:14px;"></p>
       </div>
-      <div class="field">
-        <label for="login-password">Mot de passe</label>
-        <input type="password" id="login-password" placeholder="••••••••" required>
-      </div>
-      <div class="remember-row">
-        <label><input type="checkbox" style="width:auto;"> Se souvenir de moi</label>
-        <a href="#">Mot de passe oublié ?</a>
-      </div>
-      <button type="submit" class="submit-btn">SE CONNECTER</button>
-      <p class="form-note">Pas encore de compte ? <a href="#" onclick="switchTab('signup'); return false;" style="color:var(--white);text-decoration:underline;">Inscris-toi</a></p>
-    </form>
 
-    <form class="auth-form" id="signup" onsubmit="return handleAuthSubmit(event, 'Inscription');">
-      <div class="field-row">
+      <div class="divider" style="margin:22px 32px 0;">ou</div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-target="login">Connexion</button>
+        <button class="auth-tab" data-target="signup">Inscription</button>
+      </div>
+
+      <form class="auth-form active" id="login" onsubmit="return handleAuthSubmit(event, 'Connexion');">
         <div class="field">
-          <label for="signup-firstname">Prénom</label>
-          <input type="text" id="signup-firstname" placeholder="Prénom" required>
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" placeholder="toi@exemple.com" required>
         </div>
         <div class="field">
-          <label for="signup-lastname">Nom</label>
-          <input type="text" id="signup-lastname" placeholder="Nom" required>
+          <label for="login-password">Mot de passe</label>
+          <input type="password" id="login-password" placeholder="••••••••" required>
         </div>
-      </div>
-      <div class="field">
-        <label for="signup-email">Email</label>
-        <input type="email" id="signup-email" placeholder="toi@exemple.com" required>
-      </div>
-      <div class="field">
-        <label for="signup-password">Mot de passe</label>
-        <input type="password" id="signup-password" placeholder="8 caractères minimum" required minlength="8">
-      </div>
-      <button type="submit" class="submit-btn">CRÉER MON COMPTE</button>
-      <p class="form-note">Déjà un compte ? <a href="#" onclick="switchTab('login'); return false;" style="color:var(--white);text-decoration:underline;">Connecte-toi</a></p>
-    </form>
+        <div class="remember-row">
+          <label><input type="checkbox" style="width:auto;"> Se souvenir de moi</label>
+          <a href="#">Mot de passe oublié ?</a>
+        </div>
+        <button type="submit" class="submit-btn">SE CONNECTER</button>
+        <p class="form-note">Pas encore de compte ? <a href="#" onclick="switchTab('signup'); return false;" style="color:var(--white);text-decoration:underline;">Inscris-toi</a></p>
+      </form>
+
+      <form class="auth-form" id="signup" onsubmit="return handleAuthSubmit(event, 'Inscription');">
+        <div class="field-row">
+          <div class="field">
+            <label for="signup-firstname">Prénom</label>
+            <input type="text" id="signup-firstname" placeholder="Prénom" required>
+          </div>
+          <div class="field">
+            <label for="signup-lastname">Nom</label>
+            <input type="text" id="signup-lastname" placeholder="Nom" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="signup-email">Email</label>
+          <input type="email" id="signup-email" placeholder="toi@exemple.com" required>
+        </div>
+        <div class="field">
+          <label for="signup-password">Mot de passe</label>
+          <input type="password" id="signup-password" placeholder="8 caractères minimum" required minlength="8">
+        </div>
+        <button type="submit" class="submit-btn">CRÉER MON COMPTE</button>
+        <p class="form-note">Déjà un compte ? <a href="#" onclick="switchTab('login'); return false;" style="color:var(--white);text-decoration:underline;">Connecte-toi</a></p>
+      </form>
+    </div>
   </div>
 </main>
 
@@ -179,6 +199,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="shop-data.js"></script>
 <script src="cart.js"></script>
@@ -191,14 +212,47 @@
     tab.addEventListener('click', ()=> switchTab(tab.dataset.target));
   });
 
-  // ⚠️ Formulaire de démonstration : aucun compte n'est réellement créé/connecté.
-  // Pour activer de vrais comptes utilisateurs, il faut brancher un service d'authentification
-  // (ex. Firebase Auth, Supabase, ou un backend personnalisé) sur ces formulaires.
+  // ⚠️ Les formulaires email/mot de passe restent une démo (pas encore connectés).
+  // Pour les activer aussi, il faudra créer les comptes correspondants dans Firebase Auth.
   function handleAuthSubmit(event, type){
     event.preventDefault();
-    alert(type + " : cette démo front-end n'est pas encore connectée à un système de comptes réel. Il faudra brancher un service d'authentification (Firebase, Supabase, etc.) pour activer de vrais comptes.");
+    alert(type + " : cette démo front-end n'est pas encore connectée à un système de comptes réel. Utilise plutôt \"Continuer avec Google\" ci-dessus, qui fonctionne déjà.");
     return false;
   }
+
+  // ---- Connexion Google (réelle, via Firebase Auth) ----
+  const googleBtn = document.getElementById('googleSignInBtn');
+  const googleError = document.getElementById('googleError');
+  const authForms = document.getElementById('authForms');
+  const loggedInView = document.getElementById('loggedInView');
+
+  googleBtn.addEventListener('click', ()=>{
+    const provider = new firebase.auth.GoogleAuthProvider();
+    googleError.textContent = '';
+    googleBtn.disabled = true;
+    auth.signInWithPopup(provider)
+      .catch(err => {
+        console.error(err);
+        googleError.textContent = "La connexion a échoué. Réessaie.";
+      })
+      .finally(()=> { googleBtn.disabled = false; });
+  });
+
+  document.getElementById('logoutGoogleBtn').addEventListener('click', ()=> auth.signOut());
+
+  auth.onAuthStateChanged(user => {
+    if(user){
+      authForms.style.display = 'none';
+      loggedInView.style.display = 'block';
+      const name = user.displayName || user.email;
+      document.getElementById('loggedInName').textContent = 'Bienvenue, ' + name.split(' ')[0] + ' !';
+      document.getElementById('loggedInEmail').textContent = user.email || '';
+      document.getElementById('loggedInAvatar').textContent = name.charAt(0).toUpperCase();
+    } else {
+      authForms.style.display = 'block';
+      loggedInView.style.display = 'none';
+    }
+  });
 </script>
 
 </body>

@@ -194,7 +194,19 @@
     loginBtn.textContent = 'CONNEXION...';
     auth.signInWithEmailAndPassword(email, pass)
       .catch(err => {
-        loginError.textContent = "Email ou mot de passe incorrect.";
+        console.error('Firebase auth error:', err.code, err.message);
+        const messages = {
+          'auth/wrong-password': "Mot de passe incorrect.",
+          'auth/invalid-credential': "Email ou mot de passe incorrect.",
+          'auth/invalid-login-credentials': "Email ou mot de passe incorrect.",
+          'auth/user-not-found': "Aucun compte admin trouvé avec cet email. Crée-le dans Firebase → Authentication → Users.",
+          'auth/invalid-email': "Adresse email invalide.",
+          'auth/unauthorized-domain': "Ce domaine n'est pas autorisé dans Firebase (Authentication → Settings → Authorized domains).",
+          'auth/too-many-requests': "Trop de tentatives. Réessaie dans quelques minutes.",
+          'auth/network-request-failed': "Problème de connexion réseau. Vérifie ta connexion internet.",
+          'auth/operation-not-allowed': "La connexion par email/mot de passe n'est pas activée dans Firebase (Authentication → Sign-in method)."
+        };
+        loginError.textContent = messages[err.code] || ("Erreur : " + err.message + " (code : " + err.code + ")");
       })
       .finally(() => {
         loginBtn.disabled = false;
