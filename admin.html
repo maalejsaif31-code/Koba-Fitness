@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espace admin — Koba Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0a; --bg-alt:#141414; --bg-card:#161616;
+    --red:#c8102e; --red-hover:#a80d26;
+    --white:#f5f5f5; --grey:#9a9a9a; --grey-dim:#6b6b6b;
+    --border:#242424; --maxw:1100px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  img{display:block;max-width:100%;}
+  .display{font-family:'Anton',sans-serif;text-transform:uppercase;letter-spacing:0.5px;}
+  .eyebrow{color:var(--red);font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;}
+
+  .info-banner{
+    background:#0f1f2a;border-bottom:1px solid #1c3a4d;color:#7ec4e8;
+    font-size:12.5px;line-height:1.6;padding:14px 24px;text-align:center;
+  }
+  .info-banner b{color:#a9dcf5;}
+
+  #loginScreen{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;}
+  .login-card{width:100%;max-width:380px;background:var(--bg-alt);border:1px solid var(--border);padding:36px 32px;text-align:center;}
+  .login-card h1{font-size:24px;margin:10px 0 6px;}
+  .login-card p{color:var(--grey-dim);font-size:12.5px;margin-bottom:24px;}
+  .login-card input{
+    width:100%;background:var(--bg);border:1px solid var(--border);color:var(--white);
+    padding:12px 14px;font-size:14px;font-family:inherit;margin-bottom:14px;text-align:center;
+  }
+  .login-card input:focus{outline:none;border-color:var(--red);}
+  .login-card button{
+    width:100%;background:var(--red);color:#fff;padding:13px;
+    font-size:12.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  }
+  .login-card button:hover{background:var(--red-hover);}
+  .login-card button:disabled{opacity:.5;cursor:not-allowed;}
+  .login-error{color:var(--red);font-size:12px;margin-top:12px;min-height:14px;}
+  .login-hint{color:var(--grey-dim);font-size:11px;margin-top:18px;line-height:1.6;text-align:left;background:var(--bg);padding:12px;border:1px solid var(--border);}
+
+  #dashboard{display:none;}
+  header.admin-header{border-bottom:1px solid var(--border);padding:20px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+  .admin-title{font-size:14px;font-weight:700;letter-spacing:1px;}
+  .admin-title span{color:var(--red);}
+  .header-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .btn{background:var(--red);color:#fff;padding:10px 18px;font-size:11.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:background .2s;}
+  .btn:hover{background:var(--red-hover);}
+  .btn-outline{background:transparent;border:1px solid var(--border);color:var(--white);}
+  .btn-outline:hover{border-color:var(--white);}
+  .btn-ghost{background:transparent;color:var(--grey-dim);font-size:11.5px;text-decoration:underline;padding:0;}
+  .btn-ghost:hover{color:var(--white);}
+
+  .admin-tabs{display:flex;gap:6px;margin:26px 0;border-bottom:1px solid var(--border);}
+  .admin-tab{background:transparent;color:var(--grey);padding:12px 18px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-bottom:2px solid transparent;}
+  .admin-tab.active{color:var(--white);border-bottom-color:var(--red);}
+  .admin-panel{display:none;padding-bottom:60px;}
+  .admin-panel.active{display:block;}
+
+  .empty-state{background:var(--bg-card);border:1px dashed #333;padding:40px 24px;text-align:center;color:var(--grey-dim);font-size:13px;margin-bottom:16px;}
+  .empty-state button{margin-top:14px;}
+
+  .product-row{display:grid;grid-template-columns:110px 1fr auto;gap:20px;background:var(--bg-card);border:1px solid var(--border);padding:18px;margin-bottom:16px;}
+  .product-photo-col{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .product-photo-col img{width:100px;height:130px;object-fit:cover;border:1px solid var(--border);}
+  .product-photo-col input[type=file]{font-size:10px;width:100px;color:var(--grey-dim);}
+  .product-fields{display:flex;flex-direction:column;gap:10px;}
+  .field-row-admin{display:flex;gap:10px;}
+  .field-admin{display:flex;flex-direction:column;gap:4px;flex:1;}
+  .field-admin label{font-size:10.5px;font-weight:700;letter-spacing:0.5px;color:var(--grey-dim);text-transform:uppercase;}
+  .field-admin input, .field-admin textarea, .field-admin select{background:var(--bg);border:1px solid var(--border);color:var(--white);padding:9px 10px;font-size:13px;font-family:inherit;resize:vertical;}
+  .field-admin input:focus, .field-admin textarea:focus, .field-admin select:focus{outline:none;border-color:var(--red);}
+  .cat-checks{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--grey);}
+  .cat-checks label{display:flex;align-items:center;gap:5px;cursor:pointer;}
+  .product-actions{display:flex;flex-direction:column;gap:8px;justify-content:flex-start;}
+  .product-actions button{white-space:nowrap;}
+  .btn-danger{background:transparent;border:1px solid #4a2020;color:#e05656;padding:9px 14px;font-size:11px;font-weight:700;letter-spacing:0.5px;}
+  .btn-danger:hover{background:#3a1414;}
+  .btn-save{background:var(--red);color:#fff;padding:9px 14px;font-size:11px;font-weight:700;letter-spacing:0.5px;}
+  .btn-save:hover{background:var(--red-hover);}
+  .btn-save:disabled{opacity:.5;cursor:not-allowed;}
+  .save-flash{color:#4caf50;font-size:10.5px;text-align:center;opacity:0;transition:opacity .3s;}
+  .save-flash.show{opacity:1;}
+
+  .add-product-btn{width:100%;border:1px dashed #333;background:transparent;color:var(--grey);padding:18px;font-size:12.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:6px;}
+  .add-product-btn:hover{border-color:var(--red);color:var(--red);}
+
+  .promo-row-admin{display:grid;grid-template-columns:1.2fr 1fr 1fr auto auto;gap:12px;align-items:end;background:var(--bg-card);border:1px solid var(--border);padding:16px;margin-bottom:12px;}
+  .promo-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--grey);}
+
+  .settings-block{background:var(--bg-card);border:1px solid var(--border);padding:24px;max-width:420px;}
+  .settings-block p{color:var(--grey);font-size:13px;line-height:1.6;}
+  .section-label{font-size:12px;color:var(--grey-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;}
+  .loading{color:var(--grey-dim);font-size:13px;padding:20px 0;}
+
+  @media (max-width:700px){
+    .product-row{grid-template-columns:1fr;}
+    .product-photo-col{flex-direction:row;}
+    .product-photo-col img{width:70px;height:90px;}
+    .promo-row-admin{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="info-banner">
+  🔥 Cet espace est connecté à ta base de données <b>Firebase</b>. Toute modification est visible <b>immédiatement par tous tes visiteurs</b>, sur n'importe quel appareil.
+</div>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <span class="eyebrow">KOBA FITNESS</span>
+    <h1 class="display">Espace admin</h1>
+    <p>Connecte-toi avec ton compte administrateur.</p>
+    <input type="email" id="adminEmailInput" placeholder="Email">
+    <input type="password" id="adminPassInput" placeholder="Mot de passe">
+    <button id="adminLoginBtn">SE CONNECTER</button>
+    <p class="login-error" id="loginError"></p>
+    <p class="login-hint">
+      Pas encore de compte admin ? Dans la <b>console Firebase</b> → Authentication →
+      onglet "Users" → "Add user", crée ton email + mot de passe, puis reconnecte-toi ici avec ces identifiants.
+    </p>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="wrap">
+    <header class="admin-header">
+      <div class="admin-title">KOBA FITNESS <span>/ ADMIN</span></div>
+      <div class="header-actions">
+        <a href="index.html" class="btn btn-outline">VOIR LE SITE</a>
+        <button id="logoutBtn" class="btn-ghost">Déconnexion</button>
+      </div>
+    </header>
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="products">Produits</button>
+      <button class="admin-tab" data-tab="promos">Codes promo</button>
+      <button class="admin-tab" data-tab="settings">Paramètres</button>
+    </div>
+
+    <div class="admin-panel active" id="panel-products">
+      <p class="section-label">Modifie le prix, la photo, la description ou la catégorie de chaque article</p>
+      <div id="productsList"><p class="loading">Chargement...</p></div>
+      <button class="add-product-btn" id="addProductBtn">＋ AJOUTER UN PRODUIT</button>
+    </div>
+
+    <div class="admin-panel" id="panel-promos">
+      <p class="section-label">Crée et gère les codes promo utilisables au paiement</p>
+      <div id="promosList"><p class="loading">Chargement...</p></div>
+      <button class="add-product-btn" id="addPromoBtn">＋ AJOUTER UN CODE PROMO</button>
+    </div>
+
+    <div class="admin-panel" id="panel-settings">
+      <p class="section-label">Compte & données</p>
+      <div class="settings-block">
+        <p>Connecté en tant que : <b id="currentUserEmail">—</b></p>
+      </div>
+      <div style="margin-top:24px;max-width:420px;" id="seedBlock">
+        <button class="btn btn-outline" id="seedBtn">IMPORTER LES PRODUITS DE DÉPART</button>
+        <p style="color:var(--grey-dim);font-size:11.5px;margin-top:8px;">
+          À utiliser une seule fois si ta boutique est vide (ajoute le T-shirt Kavkaz + le code promo BIENVENUE10).
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="shop-data.js"></script>
+<script src="seed-data.js"></script>
+<script>
+  const loginScreen = document.getElementById('loginScreen');
+  const dashboard = document.getElementById('dashboard');
+  const loginError = document.getElementById('loginError');
+  const loginBtn = document.getElementById('adminLoginBtn');
+
+  loginBtn.addEventListener('click', ()=>{
+    const email = document.getElementById('adminEmailInput').value.trim();
+    const pass = document.getElementById('adminPassInput').value;
+    loginError.textContent = '';
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'CONNEXION...';
+    auth.signInWithEmailAndPassword(email, pass)
+      .catch(err => {
+        loginError.textContent = "Email ou mot de passe incorrect.";
+      })
+      .finally(() => {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'SE CONNECTER';
+      });
+  });
+
+  document.getElementById('adminPassInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') loginBtn.click();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', ()=> auth.signOut());
+
+  auth.onAuthStateChanged(user => {
+    if(user){
+      loginScreen.style.display = 'none';
+      dashboard.style.display = 'block';
+      document.getElementById('currentUserEmail').textContent = user.email;
+      renderProductsPanel();
+      renderPromosPanel();
+    } else {
+      loginScreen.style.display = 'flex';
+      dashboard.style.display = 'none';
+    }
+  });
+
+  // ---- Onglets ----
+  document.querySelectorAll('.admin-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---- Produits ----
+  async function renderProductsPanel(){
+    const list = document.getElementById('productsList');
+    list.innerHTML = '<p class="loading">Chargement...</p>';
+    const products = await getProducts();
+
+    if(products.length === 0){
+      list.innerHTML = '<div class="empty-state">Aucun produit pour l\\'instant.<br>Utilise "Importer les produits de départ" dans Paramètres, ou ajoute un produit ci-dessous.</div>';
+      return;
+    }
+
+    list.innerHTML = products.map(p => `
+      <div class="product-row" data-id="${p.id}">
+        <div class="product-photo-col">
+          <img src="${p.image}" alt="${p.name}">
+          <input type="file" accept="image/*" class="photo-input">
+        </div>
+        <div class="product-fields">
+          <div class="field-row-admin">
+            <div class="field-admin"><label>Nom</label><input type="text" class="f-name" value="${escapeAttr(p.name)}"></div>
+            <div class="field-admin"><label>Variante</label><input type="text" class="f-variant" value="${escapeAttr(p.variant || '')}"></div>
+            <div class="field-admin" style="max-width:120px;"><label>Prix (€)</label><input type="number" step="0.01" min="0" class="f-price" value="${p.price}"></div>
+          </div>
+          <div class="field-admin"><label>Description</label><textarea class="f-desc" rows="2">${escapeHtml(p.description || '')}</textarea></div>
+          <div class="field-row-admin">
+            <div class="field-admin"><label>Badge (ex: NOUVEAU)</label><input type="text" class="f-tag" value="${escapeAttr(p.tag || '')}"></div>
+            <div class="field-admin">
+              <label>Catégories</label>
+              <div class="cat-checks">
+                ${['tshirts','sweats','joggers','nouveautes'].map(c => `
+                  <label><input type="checkbox" class="f-cat" value="${c}" ${(p.category||'').includes(c) ? 'checked' : ''}> ${c}</label>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+          <label style="font-size:11.5px;color:var(--grey);display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" class="f-featured" ${p.featured ? 'checked' : ''}> Afficher dans "Best sellers" (page d'accueil)
+          </label>
+        </div>
+        <div class="product-actions">
+          <button class="btn-save save-product-btn">ENREGISTRER</button>
+          <button class="btn-danger delete-product-btn">SUPPRIMER</button>
+          <p class="save-flash">Enregistré ✓</p>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.photo-input').forEach(input=>{
+      input.addEventListener('change', (e)=>{
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const row = e.target.closest('.product-row');
+          row.querySelector('img').src = ev.target.result;
+          row.dataset.newImage = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    list.querySelectorAll('.save-product-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const row = btn.closest('.product-row');
+        const id = row.dataset.id;
+        btn.disabled = true;
+        btn.textContent = '...';
+        const data = {
+          name: row.querySelector('.f-name').value.trim(),
+          variant: row.querySelector('.f-variant').value.trim(),
+          price: parseFloat(row.querySelector('.f-price').value) || 0,
+          description: row.querySelector('.f-desc').value.trim(),
+          tag: row.querySelector('.f-tag').value.trim(),
+          featured: row.querySelector('.f-featured').checked,
+          category: Array.from(row.querySelectorAll('.f-cat:checked')).map(c => c.value).join(',')
+        };
+        if(row.dataset.newImage){ data.image = row.dataset.newImage; }
+        try{
+          await updateProduct(id, data);
+          const flash = row.querySelector('.save-flash');
+          flash.classList.add('show');
+          setTimeout(()=> flash.classList.remove('show'), 1800);
+        } catch(err){
+          alert("Erreur lors de l'enregistrement : " + err.message);
+        }
+        btn.disabled = false;
+        btn.textContent = 'ENREGISTRER';
+      });
+    });
+
+    list.querySelectorAll('.delete-product-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Supprimer définitivement ce produit ?')) return;
+        const row = btn.closest('.product-row');
+        try{
+          await deleteProduct(row.dataset.id);
+          renderProductsPanel();
+        } catch(err){
+          alert("Erreur lors de la suppression : " + err.message);
+        }
+      });
+    });
+  }
+
+  document.getElementById('addProductBtn').addEventListener('click', async ()=>{
+    const placeholderImg = (typeof SEED_PRODUCTS !== 'undefined' && SEED_PRODUCTS[0]) ? SEED_PRODUCTS[0].image : '';
+    try{
+      await addProduct({
+        name: 'NOUVEAU PRODUIT',
+        variant: '',
+        description: '',
+        price: 0,
+        image: placeholderImg,
+        category: 'tshirts',
+        tag: '',
+        featured: false
+      });
+      renderProductsPanel();
+    } catch(err){
+      alert("Erreur lors de l'ajout : " + err.message);
+    }
+  });
+
+  // ---- Codes promo ----
+  async function renderPromosPanel(){
+    const list = document.getElementById('promosList');
+    list.innerHTML = '<p class="loading">Chargement...</p>';
+    const promos = await getPromos();
+
+    if(promos.length === 0){
+      list.innerHTML = '<div class="empty-state">Aucun code promo pour l\\'instant.</div>';
+      return;
+    }
+
+    list.innerHTML = promos.map(promo => `
+      <div class="promo-row-admin" data-id="${promo.id}">
+        <div class="field-admin"><label>Code</label><input type="text" class="p-code" value="${escapeAttr(promo.code)}" style="text-transform:uppercase;"></div>
+        <div class="field-admin">
+          <label>Type</label>
+          <select class="p-type">
+            <option value="percent" ${promo.type === 'percent' ? 'selected' : ''}>Pourcentage (%)</option>
+            <option value="fixed" ${promo.type === 'fixed' ? 'selected' : ''}>Montant fixe (€)</option>
+          </select>
+        </div>
+        <div class="field-admin"><label>Valeur</label><input type="number" step="0.01" min="0" class="p-value" value="${promo.value}"></div>
+        <label class="promo-toggle"><input type="checkbox" class="p-active" ${promo.active ? 'checked' : ''}> Actif</label>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-save save-promo-btn">OK</button>
+          <button class="btn-danger delete-promo-btn">✕</button>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.save-promo-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const row = btn.closest('.promo-row-admin');
+        const id = row.dataset.id;
+        try{
+          await updatePromo(id, {
+            code: row.querySelector('.p-code').value.trim().toUpperCase(),
+            type: row.querySelector('.p-type').value,
+            value: parseFloat(row.querySelector('.p-value').value) || 0,
+            active: row.querySelector('.p-active').checked
+          });
+          renderPromosPanel();
+        } catch(err){
+          alert("Erreur lors de l'enregistrement : " + err.message);
+        }
+      });
+    });
+
+    list.querySelectorAll('.delete-promo-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Supprimer ce code promo ?')) return;
+        const row = btn.closest('.promo-row-admin');
+        try{
+          await deletePromo(row.dataset.id);
+          renderPromosPanel();
+        } catch(err){
+          alert("Erreur lors de la suppression : " + err.message);
+        }
+      });
+    });
+  }
+
+  document.getElementById('addPromoBtn').addEventListener('click', async ()=>{
+    try{
+      await addPromo({ code: 'NOUVEAUCODE', type: 'percent', value: 10, active: true });
+      renderPromosPanel();
+    } catch(err){
+      alert("Erreur lors de l'ajout : " + err.message);
+    }
+  });
+
+  // ---- Seed ----
+  document.getElementById('seedBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('seedBtn');
+    btn.disabled = true;
+    btn.textContent = 'IMPORT EN COURS...';
+    try{
+      const result = await seedDefaultDataIfNeeded();
+      if(!result.products && !result.promos){
+        alert("Ta boutique contient déjà des produits et/ou des codes promo — rien n'a été ajouté pour éviter les doublons.");
+      } else {
+        alert("Import terminé !");
+      }
+      renderProductsPanel();
+      renderPromosPanel();
+    } catch(err){
+      alert("Erreur lors de l'import : " + err.message);
+    }
+    btn.disabled = false;
+    btn.textContent = 'IMPORTER LES PRODUITS DE DÉPART';
+  });
+
+  function escapeHtml(str){ return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escapeAttr(str){ return (str || '').replace(/"/g,'&quot;'); }
+</script>
+
+</body>
+</html>
