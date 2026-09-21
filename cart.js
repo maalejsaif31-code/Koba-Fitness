@@ -179,11 +179,23 @@ function paypalOrderConfig(){
 function renderPaypalButton(){
   const container = document.getElementById('paypal-button-container');
   const appleContainer = document.getElementById('applepay-button-container');
+  const loginPrompt = document.getElementById('loginToPayPrompt');
   if(!container || typeof paypal === 'undefined') return;
   container.innerHTML = '';
   if(appleContainer) appleContainer.innerHTML = '';
   const total = cartTotal();
-  if(total <= 0) return;
+  if(total <= 0){
+    if(loginPrompt) loginPrompt.style.display = 'none';
+    return;
+  }
+
+  // ---- Connexion obligatoire avant de pouvoir payer ----
+  const isLoggedIn = typeof auth !== 'undefined' && auth.currentUser;
+  if(!isLoggedIn){
+    if(loginPrompt) loginPrompt.style.display = 'block';
+    return;
+  }
+  if(loginPrompt) loginPrompt.style.display = 'none';
 
   // Bouton PayPal classique (carte bancaire + solde PayPal). On exclut Apple Pay
   // ici pour l'afficher séparément, dans son propre bouton natif ci-dessous.
@@ -217,7 +229,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if(document.getElementById('cartDrawer')){
     initCartDrawer();
     renderCart();
-    renderPaypalButton();
+    // Firebase met un instant à restaurer la session au chargement : on
+    // (ré)affiche les boutons de paiement dès que l'état de connexion est connu,
+    // et à chaque changement (connexion / déconnexion).
+    if(typeof auth !== 'undefined'){
+      auth.onAuthStateChanged(() => renderPaypalButton());
+    } else {
+      renderPaypalButton();
+    }
   } else {
     initCartCountOnly();
   }

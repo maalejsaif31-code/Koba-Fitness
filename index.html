@@ -265,13 +265,14 @@
   .card-bottom{display:flex;align-items:center;justify-content:space-between;}
   .card-price{color:var(--red);font-weight:800;font-size:15px;}
   .add-btn{
-    width:34px;height:34px;
-    background:var(--bg);border:1px solid var(--border);color:var(--white);
+    width:42px;height:42px;
+    background:var(--red);border:1px solid var(--red);color:#fff;
     display:flex;align-items:center;justify-content:center;
-    transition:background .2s;
+    transition:background .2s, transform .15s;
+    box-shadow:0 2px 8px rgba(200,16,46,0.35);
   }
-  .add-btn:hover{background:var(--red);border-color:var(--red);}
-  .add-btn svg{width:16px;height:16px;}
+  .add-btn:hover{background:var(--red-hover);border-color:var(--red-hover);transform:scale(1.06);}
+  .add-btn svg{width:19px;height:19px;}
 
   .section-cta{text-align:center;margin-top:44px;}
 
@@ -398,6 +399,10 @@
       <span>Total</span>
       <span id="cartTotal">0,00 €</span>
     </div>
+    <div id="loginToPayPrompt" style="display:none;background:var(--bg);border:1px solid var(--border);padding:16px;text-align:center;margin-bottom:10px;">
+      <p style="font-size:12.5px;color:var(--grey);margin-bottom:10px;">Connecte-toi pour finaliser ta commande.</p>
+      <a href="compte.html" class="btn" style="display:inline-block;">SE CONNECTER</a>
+    </div>
     <div id="paypal-button-container"></div>
     <div id="applepay-button-container" style="margin-top:8px;"></div>
     <p class="cart-note">Paiement sécurisé via PayPal</p>
@@ -480,17 +485,17 @@
       <div class="footer-col">
         <h4>AIDE</h4>
         <ul>
-          <li><a href="#">Livraison</a></li>
-          <li><a href="#">Retours</a></li>
-          <li><a href="#">Guide des tailles</a></li>
+          <li><a href="livraison-retours.html">Livraison</a></li>
+          <li><a href="livraison-retours.html">Retours</a></li>
+          <li><a href="guide-tailles.html">Guide des tailles</a></li>
           <li><a href="#">Contact</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4>SUIVEZ-NOUS</h4>
         <ul>
-          <li><a href="#">Instagram</a></li>
-          <li><a href="#">TikTok</a></li>
+          <li><a href="https://www.instagram.com/koba_fitness_/" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="https://www.tiktok.com/@koba.fitness" target="_blank" rel="noopener">TikTok</a></li>
         </ul>
       </div>
     </div>
@@ -507,6 +512,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="shop-data.js"></script>
 <script src="cart.js"></script>
