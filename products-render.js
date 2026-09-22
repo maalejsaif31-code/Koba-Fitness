@@ -1,13 +1,38 @@
 /* ============================================================
    KOBA FITNESS — Rendu dynamique des grilles produit
    Nécessite shop-data.js et cart.js chargés avant ce fichier.
+   Chaque produit peut avoir plusieurs photos (champ "images",
+   tableau) ; on garde une compatibilité avec l'ancien champ
+   "image" (une seule photo) pour les produits déjà existants.
    ============================================================ */
+
+function productImages(p){
+  if(Array.isArray(p.images) && p.images.length > 0) return p.images;
+  if(p.image) return [p.image];
+  return [];
+}
 
 function productCardHTML(p){
   const tagHTML = p.tag ? `<span class="tag">${p.tag}</span>` : '';
+  const images = productImages(p);
+
+  const imgsHTML = images.map((src, i) =>
+    `<img src="${src}" class="${i === 0 ? 'active' : ''}" data-idx="${i}" alt="${p.name} - ${p.variant} (${i + 1}/${images.length})">`
+  ).join('');
+
+  const dotsHTML = images.length > 1
+    ? `<div class="card-dots">${images.map((_, i) =>
+        `<button type="button" class="dot ${i === 0 ? 'active' : ''}" data-idx="${i}" aria-label="Photo ${i + 1}"></button>`
+      ).join('')}</div>`
+    : '';
+
   return `
     <div class="card" data-category="${p.category}">
-      <div class="card-photo">${tagHTML}<img src="${p.image}" alt="${p.name} - ${p.variant}"></div>
+      <div class="card-photo">
+        ${tagHTML}
+        <div class="card-photo-slider">${imgsHTML}</div>
+        ${dotsHTML}
+      </div>
       <div class="card-body">
         <div class="card-name">${p.name}</div>
         <div class="card-variant">${p.variant}</div>
@@ -35,6 +60,7 @@ async function renderProductGrid(containerId, options){
     }
     container.innerHTML = products.map(productCardHTML).join('');
     wireAddButtons(container);
+    wirePhotoDots(container);
   } catch(err){
     console.error(err);
     container.innerHTML = '<p style="color:var(--red);grid-column:1/-1;text-align:center;padding:40px 0;">Impossible de charger les produits pour le moment.</p>';
@@ -46,6 +72,22 @@ function wireAddButtons(scope){
     btn.addEventListener('click', ()=>{
       addToCart(btn.dataset.name, parseFloat(btn.dataset.price));
       if(window.kobaOpenCart) window.kobaOpenCart();
+    });
+  });
+}
+
+function wirePhotoDots(scope){
+  scope.querySelectorAll('.card-photo').forEach(photoEl=>{
+    const dots = photoEl.querySelectorAll('.dot');
+    const imgs = photoEl.querySelectorAll('.card-photo-slider img');
+    dots.forEach(dot=>{
+      dot.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const idx = dot.dataset.idx;
+        dots.forEach(d => d.classList.toggle('active', d.dataset.idx === idx));
+        imgs.forEach(img => img.classList.toggle('active', img.dataset.idx === idx));
+      });
     });
   });
 }

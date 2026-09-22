@@ -80,6 +80,21 @@
   .product-photo-col{display:flex;flex-direction:column;align-items:center;gap:8px;}
   .product-photo-col img{width:100px;height:130px;object-fit:cover;border:1px solid var(--border);}
   .product-photo-col input[type=file]{font-size:10px;width:100px;color:var(--grey-dim);}
+  .photo-thumbs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;width:110px;}
+  .photo-thumb{position:relative;width:50px;height:65px;}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;border:1px solid var(--border);display:block;}
+  .remove-thumb-btn{
+    position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;
+    background:var(--red);color:#fff;font-size:10px;line-height:1;
+    display:flex;align-items:center;justify-content:center;border:1px solid var(--bg);
+  }
+  .remove-thumb-btn:hover{background:var(--red-hover);}
+  .add-photo-btn{
+    display:block;width:110px;text-align:center;cursor:pointer;
+    border:1px dashed #3a3a3a;color:var(--grey-dim);font-size:10.5px;
+    padding:8px 4px;transition:border-color .2s, color .2s;
+  }
+  .add-photo-btn:hover{border-color:var(--red);color:var(--red);}
   .product-fields{display:flex;flex-direction:column;gap:10px;}
   .field-row-admin{display:flex;gap:10px;}
   .field-admin{display:flex;flex-direction:column;gap:4px;flex:1;}
@@ -111,8 +126,8 @@
 
   @media (max-width:700px){
     .product-row{grid-template-columns:1fr;}
-    .product-photo-col{flex-direction:row;}
-    .product-photo-col img{width:70px;height:90px;}
+    .product-photo-col{flex-direction:row;flex-wrap:wrap;width:100%;}
+    .photo-thumbs{width:auto;}
     .promo-row-admin{grid-template-columns:1fr 1fr;}
   }
 </style>
@@ -379,11 +394,23 @@
       return;
     }
 
-    list.innerHTML = products.map(p => `
+    list.innerHTML = products.map(p => {
+      const images = (Array.isArray(p.images) && p.images.length > 0) ? p.images : (p.image ? [p.image] : []);
+      const thumbsHTML = images.map((src, i) => `
+        <div class="photo-thumb" data-idx="${i}">
+          <img src="${src}" alt="Photo ${i+1}">
+          <button type="button" class="remove-thumb-btn" data-idx="${i}" aria-label="Retirer cette photo">✕</button>
+        </div>
+      `).join('');
+
+      return `
       <div class="product-row" data-id="${p.id}">
         <div class="product-photo-col">
-          <img src="${p.image}" alt="${p.name}">
-          <input type="file" accept="image/*" class="photo-input">
+          <div class="photo-thumbs">${thumbsHTML}</div>
+          <label class="add-photo-btn">
+            ＋ Ajouter des photos
+            <input type="file" accept="image/*" multiple class="photo-input" hidden>
+          </label>
         </div>
         <div class="product-fields">
           <div class="field-row-admin">
@@ -413,19 +440,50 @@
           <p class="save-flash">Enregistré ✓</p>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
-    list.querySelectorAll('.photo-input').forEach(input=>{
+    // Chaque ligne garde son tableau de photos en mémoire (dataset JS, pas juste le DOM)
+    // pour pouvoir ajouter/retirer des images avant l'enregistrement.
+    list.querySelectorAll('.product-row').forEach(row=>{
+      const id = row.dataset.id;
+      const product = products.find(p => p.id === id);
+      row._images = (Array.isArray(product.images) && product.images.length > 0) ? [...product.images] : (product.image ? [product.image] : []);
+    });
+
+    function refreshThumbs(row){
+      const thumbsEl = row.querySelector('.photo-thumbs');
+      thumbsEl.innerHTML = row._images.map((src, i) => `
+        <div class="photo-thumb" data-idx="${i}">
+          <img src="${src}" alt="Photo ${i+1}">
+          <button type="button" class="remove-thumb-btn" data-idx="${i}" aria-label="Retirer cette photo">✕</button>
+        </div>
+      `).join('');
+      thumbsEl.querySelectorAll('.remove-thumb-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          row._images.splice(parseInt(btn.dataset.idx), 1);
+          refreshThumbs(row);
+        });
+      });
+    }
+
+    list.querySelectorAll('.product-row').forEach(row=>{
+      refreshThumbs(row);
+      const input = row.querySelector('.photo-input');
       input.addEventListener('change', (e)=>{
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const row = e.target.closest('.product-row');
-          row.querySelector('img').src = ev.target.result;
-          row.dataset.newImage = ev.target.result;
-        };
-        reader.readAsDataURL(file);
+        const files = Array.from(e.target.files || []);
+        if(files.length === 0) return;
+        let remaining = files.length;
+        files.forEach(file=>{
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            row._images.push(ev.target.result);
+            remaining--;
+            if(remaining === 0) refreshThumbs(row);
+          };
+          reader.readAsDataURL(file);
+        });
+        input.value = '';
       });
     });
 
@@ -433,6 +491,10 @@
       btn.addEventListener('click', async ()=>{
         const row = btn.closest('.product-row');
         const id = row.dataset.id;
+        if(row._images.length === 0){
+          alert("Ajoute au moins une photo avant d'enregistrer.");
+          return;
+        }
         btn.disabled = true;
         btn.textContent = '...';
         const data = {
@@ -442,9 +504,10 @@
           description: row.querySelector('.f-desc').value.trim(),
           tag: row.querySelector('.f-tag').value.trim(),
           featured: row.querySelector('.f-featured').checked,
-          category: Array.from(row.querySelectorAll('.f-cat:checked')).map(c => c.value).join(',')
+          category: Array.from(row.querySelectorAll('.f-cat:checked')).map(c => c.value).join(','),
+          images: row._images,
+          image: row._images[0]
         };
-        if(row.dataset.newImage){ data.image = row.dataset.newImage; }
         try{
           await updateProduct(id, data);
           const flash = row.querySelector('.save-flash');
@@ -475,16 +538,19 @@
   document.getElementById('addProductBtn').addEventListener('click', async ()=>{
     try{
       const products = await getProducts();
-      const placeholderImg = products[0] ? products[0].image : '';
+      const first = products[0];
+      const placeholderImgs = first ? ((Array.isArray(first.images) && first.images.length) ? [first.images[0]] : (first.image ? [first.image] : [])) : [];
       await addProduct({
         name: 'NOUVEAU PRODUIT', variant: '', description: '', price: 0,
-        image: placeholderImg, category: 'tshirts', tag: '', featured: false
+        images: placeholderImgs, image: placeholderImgs[0] || '',
+        category: 'tshirts', tag: '', featured: false
       });
       renderProductsPanel();
     } catch(err){
       alert("Erreur lors de l'ajout : " + err.message);
     }
   });
+
 
   async function getPromos(){
     const snapshot = await db.collection('promos').get();
