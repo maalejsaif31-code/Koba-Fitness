@@ -120,6 +120,22 @@ function wirePhotoDots(scope){
         goTo(current + 1);
       });
     }
+
+    // Toucher/cliquer directement sur la photo : moitié gauche = précédente, moitié droite = suivante.
+    const slider = photoEl.querySelector('.card-photo-slider');
+    if(slider){
+      slider.style.cursor = 'pointer';
+      slider.addEventListener('click', (e)=>{
+        const rect = slider.getBoundingClientRect();
+        const tapX = e.clientX - rect.left;
+        const current = [...dots].findIndex(d => d.classList.contains('active'));
+        if(tapX < rect.width / 2){
+          goTo(current - 1);
+        } else {
+          goTo(current + 1);
+        }
+      });
+    }
   });
 }
 
