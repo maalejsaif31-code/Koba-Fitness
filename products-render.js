@@ -26,11 +26,17 @@ function productCardHTML(p){
       ).join('')}</div>`
     : '';
 
+  const arrowsHTML = images.length > 1
+    ? `<button type="button" class="photo-arrow prev" aria-label="Photo précédente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+       <button type="button" class="photo-arrow next" aria-label="Photo suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`
+    : '';
+
   return `
     <div class="card" data-category="${p.category}">
       <div class="card-photo">
         ${tagHTML}
         <div class="card-photo-slider">${imgsHTML}</div>
+        ${arrowsHTML}
         ${dotsHTML}
       </div>
       <div class="card-body">
@@ -80,15 +86,40 @@ function wirePhotoDots(scope){
   scope.querySelectorAll('.card-photo').forEach(photoEl=>{
     const dots = photoEl.querySelectorAll('.dot');
     const imgs = photoEl.querySelectorAll('.card-photo-slider img');
+    if(imgs.length <= 1) return;
+
+    function goTo(idx){
+      idx = ((idx % imgs.length) + imgs.length) % imgs.length; // boucle
+      dots.forEach(d => d.classList.toggle('active', parseInt(d.dataset.idx) === idx));
+      imgs.forEach(img => img.classList.toggle('active', parseInt(img.dataset.idx) === idx));
+    }
+
     dots.forEach(dot=>{
       dot.addEventListener('click', (e)=>{
         e.preventDefault();
         e.stopPropagation();
-        const idx = dot.dataset.idx;
-        dots.forEach(d => d.classList.toggle('active', d.dataset.idx === idx));
-        imgs.forEach(img => img.classList.toggle('active', img.dataset.idx === idx));
+        goTo(parseInt(dot.dataset.idx));
       });
     });
+
+    const prevBtn = photoEl.querySelector('.photo-arrow.prev');
+    const nextBtn = photoEl.querySelector('.photo-arrow.next');
+    if(prevBtn){
+      prevBtn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const current = [...dots].findIndex(d => d.classList.contains('active'));
+        goTo(current - 1);
+      });
+    }
+    if(nextBtn){
+      nextBtn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const current = [...dots].findIndex(d => d.classList.contains('active'));
+        goTo(current + 1);
+      });
+    }
   });
 }
 

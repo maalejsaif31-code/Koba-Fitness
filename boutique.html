@@ -99,16 +99,27 @@
   .tab-btn.active{background:var(--red);border-color:var(--red);color:#fff;}
 
   .section{padding:44px 0 90px;}
-  .products{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;}
+  .products{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;}
   .card{background:var(--bg-card);border:1px solid var(--border);transition:opacity .2s;}
   .card.hidden{display:none;}
   .card-photo{position:relative;aspect-ratio:3/4;background:#101010;overflow:hidden;}
   .card-photo-slider{position:relative;width:100%;height:100%;}
   .card-photo-slider img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 20%;opacity:0;transition:opacity .3s ease;}
   .card-photo-slider img.active{opacity:1;}
-  .card-dots{position:absolute;bottom:10px;left:0;right:0;z-index:2;display:flex;justify-content:center;gap:6px;}
-  .card-dots .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.4);border:1px solid rgba(0,0,0,0.3);padding:0;transition:background .2s, transform .2s;}
-  .card-dots .dot.active{background:#fff;transform:scale(1.15);}
+  .card-dots{position:absolute;bottom:12px;left:0;right:0;z-index:2;display:flex;justify-content:center;gap:7px;}
+  .card-dots .dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,0.45);border:1px solid rgba(0,0,0,0.35);padding:0;transition:background .2s, transform .2s;}
+  .card-dots .dot.active{background:#fff;transform:scale(1.25);}
+  .photo-arrow{
+    position:absolute;top:50%;transform:translateY(-50%);z-index:3;
+    width:34px;height:34px;border-radius:50%;
+    background:rgba(10,10,10,0.55);color:#fff;border:1px solid rgba(255,255,255,0.25);
+    display:flex;align-items:center;justify-content:center;
+    transition:background .2s;
+  }
+  .photo-arrow:hover{background:rgba(200,16,46,0.85);}
+  .photo-arrow.prev{left:10px;}
+  .photo-arrow.next{right:10px;}
+  .photo-arrow svg{width:18px;height:18px;}
   .tag{position:absolute;top:12px;left:12px;background:var(--red);color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 9px;}
   .tag-soon{background:#3a3a3a;}
   .card-body{padding:16px 16px 18px;}
@@ -140,7 +151,7 @@
     .page-head h1{font-size:30px;}
   }
   @media (max-width:520px){
-    .products{grid-template-columns:1fr 1fr;gap:12px;}
+    .products{grid-template-columns:1fr;gap:20px;max-width:380px;margin:0 auto;}
     .footer-grid{grid-template-columns:1fr;}
     .footer-bottom{flex-direction:column;gap:8px;text-align:center;}
     .tab-btn{padding:9px 14px;font-size:11px;}
