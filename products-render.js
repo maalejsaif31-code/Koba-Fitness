@@ -6,6 +6,16 @@
    "image" (une seule photo) pour les produits déjà existants.
    ============================================================ */
 
+/* ============================================================
+   KOBA FITNESS — Rendu dynamique des grilles produit
+   Nécessite shop-data.js et cart.js chargés avant ce fichier.
+   Chaque produit peut avoir plusieurs photos (champ "images",
+   tableau) ; on garde une compatibilité avec l'ancien champ
+   "image" (une seule photo) pour les produits déjà existants.
+   ============================================================ */
+
+const KOBA_SIZES = ['S', 'M', 'L', 'XL'];
+
 function productImages(p){
   if(Array.isArray(p.images) && p.images.length > 0) return p.images;
   if(p.image) return [p.image];
@@ -31,6 +41,12 @@ function productCardHTML(p){
        <button type="button" class="photo-arrow next" aria-label="Photo suivante"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>`
     : '';
 
+  const sizesHTML = `
+    <div class="size-select">
+      ${KOBA_SIZES.map(s => `<button type="button" class="size-btn" data-size="${s}">${s}</button>`).join('')}
+    </div>
+    <p class="size-error">Choisis une taille avant d'ajouter au panier.</p>`;
+
   return `
     <div class="card" data-category="${p.category}">
       <div class="card-photo">
@@ -42,6 +58,7 @@ function productCardHTML(p){
       <div class="card-body">
         <div class="card-name">${p.name}</div>
         <div class="card-variant">${p.variant}</div>
+        ${sizesHTML}
         <div class="card-bottom">
           <span class="card-price">${formatPrice(p.price)}</span>
           <button class="add-btn" data-name="${p.name} - ${p.variant}" data-price="${p.price}" aria-label="Ajouter au panier">
@@ -76,8 +93,32 @@ async function renderProductGrid(containerId, options){
 function wireAddButtons(scope){
   scope.querySelectorAll('.add-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      addToCart(btn.dataset.name, parseFloat(btn.dataset.price));
+      const card = btn.closest('.card');
+      const sizeSelect = card ? card.querySelector('.size-select') : null;
+
+      if(sizeSelect){
+        const activeBtn = sizeSelect.querySelector('.size-btn.active');
+        if(!activeBtn){
+          sizeSelect.classList.add('error');
+          card.querySelector('.size-error').classList.add('show');
+          sizeSelect.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          return;
+        }
+        addToCart(btn.dataset.name + ' - Taille ' + activeBtn.dataset.size, parseFloat(btn.dataset.price));
+      } else {
+        addToCart(btn.dataset.name, parseFloat(btn.dataset.price));
+      }
+
       if(window.kobaOpenCart) window.kobaOpenCart();
+    });
+  });
+
+  scope.querySelectorAll('.size-btn').forEach(sizeBtn=>{
+    sizeBtn.addEventListener('click', ()=>{
+      const sizeSelect = sizeBtn.closest('.size-select');
+      sizeSelect.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('active', b === sizeBtn));
+      sizeSelect.classList.remove('error');
+      sizeSelect.closest('.card-body').querySelector('.size-error').classList.remove('show');
     });
   });
 }

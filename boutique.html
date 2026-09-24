@@ -125,6 +125,13 @@
   .card-body{padding:16px 16px 18px;}
   .card-name{font-size:14px;font-weight:700;margin-bottom:2px;}
   .card-variant{font-size:11.5px;color:var(--grey-dim);letter-spacing:0.5px;margin-bottom:10px;}
+  .size-select{display:flex;gap:6px;margin-bottom:6px;}
+  .size-btn{width:32px;height:32px;background:var(--bg);border:1px solid var(--border);color:var(--grey);font-size:11.5px;font-weight:700;transition:all .15s;}
+  .size-btn:hover{border-color:var(--red);color:var(--white);}
+  .size-btn.active{background:var(--red);border-color:var(--red);color:#fff;}
+  .size-select.error .size-btn{border-color:var(--red);}
+  .size-error{display:none;color:var(--red);font-size:11px;margin-bottom:8px;}
+  .size-error.show{display:block;}
   .card-bottom{display:flex;align-items:center;justify-content:space-between;}
   .card-price{color:var(--red);font-weight:800;font-size:15px;}
   .add-btn{width:42px;height:42px;background:var(--red);border:1px solid var(--red);color:#fff;display:flex;align-items:center;justify-content:center;transition:background .2s, transform .15s;box-shadow:0 2px 8px rgba(200,16,46,0.35);}
@@ -145,6 +152,7 @@
   @media (max-width:900px){
     .nav-links{display:none;}
     .burger{display:flex;}
+    .mobile-menu{display:flex;}
     .products{grid-template-columns:repeat(2,1fr);}
     .footer-grid{grid-template-columns:repeat(2,1fr);}
     .wrap{padding:0 20px;}
