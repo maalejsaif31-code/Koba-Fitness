@@ -14,7 +14,7 @@
    "image" (une seule photo) pour les produits déjà existants.
    ============================================================ */
 
-const KOBA_SIZES = ['S', 'M', 'L', 'XL'];
+const KOBA_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
 function productImages(p){
   if(Array.isArray(p.images) && p.images.length > 0) return p.images;
