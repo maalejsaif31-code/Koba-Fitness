@@ -168,6 +168,7 @@
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="products">Produits</button>
       <button class="admin-tab" data-tab="promos">Codes promo</button>
+      <button class="admin-tab" data-tab="orders">Commandes</button>
       <button class="admin-tab" data-tab="messages">Messages</button>
       <button class="admin-tab" data-tab="settings">Paramètres</button>
     </div>
@@ -182,6 +183,11 @@
       <p class="section-label">Crée et gère les codes promo utilisables au paiement</p>
       <div id="promosList"><p class="loading">Chargement...</p></div>
       <button class="add-product-btn" id="addPromoBtn">＋ AJOUTER UN CODE PROMO</button>
+    </div>
+
+    <div class="admin-panel" id="panel-orders">
+      <p class="section-label">Commandes payées, avec les informations de livraison de chaque client</p>
+      <div id="ordersList"><p class="loading">Chargement...</p></div>
     </div>
 
     <div class="admin-panel" id="panel-messages">
@@ -346,6 +352,7 @@
         document.getElementById('currentUserEmail').textContent = user.email;
         renderProductsPanel();
         renderPromosPanel();
+        renderOrdersPanel();
         renderMessagesPanel();
       } else {
         log('Aucune session active — écran de connexion affiché.');
@@ -678,6 +685,56 @@
       alert("Erreur lors de l'ajout : " + err.message);
     }
   });
+
+  async function getOrders(){
+    const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+
+  async function renderOrdersPanel(){
+    const list = document.getElementById('ordersList');
+    list.innerHTML = '<p class="loading">Chargement...</p>';
+    let orders;
+    try{
+      orders = await getOrders();
+    } catch(err){
+      list.innerHTML = '<div class="empty-state">Erreur de chargement : ' + err.message + '</div>';
+      return;
+    }
+
+    if(orders.length === 0){
+      list.innerHTML = '<div class="empty-state">Aucune commande pour l\'instant.</div>';
+      return;
+    }
+
+    list.innerHTML = orders.map(o => {
+      const date = o.createdAt && o.createdAt.toDate ? o.createdAt.toDate().toLocaleString('fr-FR') : '—';
+      const s = o.shipping || {};
+      const itemsList = (o.items || []).map(i => `${i.qty} × ${escapeHtml(i.name)} (${formatPrice(i.price)})`).join('<br>');
+      return `
+        <div class="product-row" style="grid-template-columns:1fr auto;">
+          <div>
+            <p style="font-size:13px;font-weight:700;margin-bottom:4px;">
+              ${escapeHtml(s.firstName || '')} ${escapeHtml(s.lastName || '')} —
+              <span style="color:var(--grey-dim);font-weight:400;">${escapeHtml(o.email || '')}</span>
+            </p>
+            <p style="font-size:12px;color:var(--grey);margin-bottom:8px;">
+              ${escapeHtml(s.address || '')}${s.address2 ? ', ' + escapeHtml(s.address2) : ''}<br>
+              ${escapeHtml(s.zip || '')} ${escapeHtml(s.city || '')} · ${escapeHtml(s.phone || '')}
+            </p>
+            <p style="font-size:12.5px;color:var(--white);margin-bottom:6px;">${itemsList}</p>
+            <p style="font-size:11.5px;color:var(--grey-dim);">
+              ${date} ${o.promoCode ? '· Code : ' + escapeHtml(o.promoCode) : ''}
+            </p>
+          </div>
+          <div class="product-actions" style="justify-content:center;">
+            <span class="card-price" style="font-size:16px;">${formatPrice(o.total || 0)}</span>
+            <span style="font-size:11px;color:#4caf50;text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(o.status || 'payée')}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
   async function getMessages(){
     const snapshot = await db.collection('messages').orderBy('createdAt', 'desc').get();

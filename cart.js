@@ -145,21 +145,90 @@ function initCartDrawer(){
     if(appliedPromo) promoInput.value = appliedPromo.code;
   }
 
+  // ---- Formulaire de livraison : pré-remplissage + mise à jour en direct ----
+  prefillShippingFromStorage();
+  document.querySelectorAll('#shippingForm input').forEach(input=>{
+    input.addEventListener('input', () => renderPaypalButton());
+  });
+
   window.kobaOpenCart = openCart;
   window.kobaCloseCart = closeCart;
+}
+
+function getShippingData(){
+  return {
+    firstName: (document.getElementById('ship-firstname') || {}).value?.trim() || '',
+    lastName: (document.getElementById('ship-lastname') || {}).value?.trim() || '',
+    address: (document.getElementById('ship-address') || {}).value?.trim() || '',
+    address2: (document.getElementById('ship-address2') || {}).value?.trim() || '',
+    zip: (document.getElementById('ship-zip') || {}).value?.trim() || '',
+    city: (document.getElementById('ship-city') || {}).value?.trim() || '',
+    phone: (document.getElementById('ship-phone') || {}).value?.trim() || ''
+  };
+}
+
+function isShippingComplete(){
+  const s = getShippingData();
+  return !!(s.firstName && s.lastName && s.address && s.zip && s.city && s.phone);
+}
+
+function prefillShippingFromStorage(){
+  const saved = JSON.parse(localStorage.getItem('kobaShipping') || 'null');
+  if(!saved) return;
+  const map = { firstName:'ship-firstname', lastName:'ship-lastname', address:'ship-address', address2:'ship-address2', zip:'ship-zip', city:'ship-city', phone:'ship-phone' };
+  Object.keys(map).forEach(key=>{
+    const el = document.getElementById(map[key]);
+    if(el && saved[key]) el.value = saved[key];
+  });
+}
+
+function saveShippingToStorage(){
+  localStorage.setItem('kobaShipping', JSON.stringify(getShippingData()));
 }
 
 function paypalOrderConfig(){
   return {
     createOrder: function(data, actions){
       const total = cartTotal();
+      const shipping = getShippingData();
       return actions.order.create({
-        purchase_units: [{ amount: { value: total.toFixed(2), currency_code: 'EUR' } }]
+        purchase_units: [{
+          amount: { value: total.toFixed(2), currency_code: 'EUR' },
+          shipping: {
+            name: { full_name: (shipping.firstName + ' ' + shipping.lastName).trim() },
+            address: {
+              address_line_1: shipping.address,
+              address_line_2: shipping.address2 || '',
+              admin_area_2: shipping.city,
+              postal_code: shipping.zip,
+              country_code: 'FR'
+            }
+          }
+        }],
+        application_context: { shipping_preference: 'SET_PROVIDED_ADDRESS' }
       });
     },
     onApprove: function(data, actions){
       return actions.order.capture().then(function(details){
-        alert('Merci ' + (details.payer && details.payer.name ? details.payer.name.given_name : '') + ' ! Ta commande a bien été payée.');
+        const shipping = getShippingData();
+        saveShippingToStorage();
+
+        // Enregistre la commande dans Firebase pour qu'elle soit visible côté admin.
+        if(typeof db !== 'undefined' && typeof auth !== 'undefined' && auth.currentUser){
+          db.collection('orders').add({
+            uid: auth.currentUser.uid,
+            email: auth.currentUser.email || '',
+            shipping: shipping,
+            items: cart.map(i => ({ name: i.name, price: i.price, qty: i.qty })),
+            total: cartTotal(),
+            promoCode: appliedPromo ? appliedPromo.code : null,
+            paypalOrderId: data.orderID,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'payée'
+          }).catch(err => console.error('Erreur enregistrement commande :', err));
+        }
+
+        alert('Merci ' + (shipping.firstName || (details.payer && details.payer.name ? details.payer.name.given_name : '')) + ' ! Ta commande a bien été payée et sera expédiée à l\'adresse indiquée.');
         cart = [];
         appliedPromo = null;
         saveCart();
@@ -180,12 +249,15 @@ function renderPaypalButton(){
   const container = document.getElementById('paypal-button-container');
   const appleContainer = document.getElementById('applepay-button-container');
   const loginPrompt = document.getElementById('loginToPayPrompt');
+  const shippingForm = document.getElementById('shippingForm');
+  const shippingError = document.getElementById('shippingError');
   if(!container || typeof paypal === 'undefined') return;
   container.innerHTML = '';
   if(appleContainer) appleContainer.innerHTML = '';
   const total = cartTotal();
   if(total <= 0){
     if(loginPrompt) loginPrompt.style.display = 'none';
+    if(shippingForm) shippingForm.style.display = 'none';
     return;
   }
 
@@ -193,9 +265,18 @@ function renderPaypalButton(){
   const isLoggedIn = typeof auth !== 'undefined' && auth.currentUser;
   if(!isLoggedIn){
     if(loginPrompt) loginPrompt.style.display = 'block';
+    if(shippingForm) shippingForm.style.display = 'none';
     return;
   }
   if(loginPrompt) loginPrompt.style.display = 'none';
+  if(shippingForm) shippingForm.style.display = 'block';
+
+  // ---- Informations de livraison obligatoires avant de pouvoir payer ----
+  if(!isShippingComplete()){
+    if(shippingError) shippingError.textContent = "Remplis toutes les informations de livraison ci-dessus pour continuer.";
+    return;
+  }
+  if(shippingError) shippingError.textContent = '';
 
   // Bouton PayPal classique (carte bancaire + solde PayPal). On exclut Apple Pay
   // ici pour l'afficher séparément, dans son propre bouton natif ci-dessous.

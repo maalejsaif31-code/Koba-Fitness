@@ -179,6 +179,15 @@
   .promo-message{font-size:11.5px;min-height:14px;margin-bottom:10px;}
   .promo-message.promo-ok{color:#4caf50;}
   .promo-message.promo-error{color:var(--red);}
+  .shipping-title{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--grey-dim);margin-bottom:8px;}
+  #shippingForm input{
+    width:100%;background:var(--bg);border:1px solid var(--border);color:var(--white);
+    padding:9px 10px;font-size:12.5px;margin-bottom:8px;font-family:inherit;
+  }
+  #shippingForm input:focus{outline:none;border-color:var(--red);}
+  .field-row-cart{display:flex;gap:8px;}
+  .field-row-cart input{flex:1;}
+  .shipping-error{color:var(--red);font-size:11px;margin-bottom:8px;min-height:14px;}
 
   /* Hero */
   .hero{
@@ -434,6 +443,23 @@
       <p style="font-size:12.5px;color:var(--grey);margin-bottom:10px;">Connecte-toi pour finaliser ta commande.</p>
       <a href="compte.html" class="btn" style="display:inline-block;">SE CONNECTER</a>
     </div>
+
+    <div id="shippingForm" style="display:none;">
+      <p class="shipping-title">Informations de livraison</p>
+      <div class="field-row-cart">
+        <input type="text" id="ship-firstname" placeholder="Prénom">
+        <input type="text" id="ship-lastname" placeholder="Nom">
+      </div>
+      <input type="text" id="ship-address" placeholder="Adresse">
+      <input type="text" id="ship-address2" placeholder="Complément (optionnel)">
+      <div class="field-row-cart">
+        <input type="text" id="ship-zip" placeholder="Code postal">
+        <input type="text" id="ship-city" placeholder="Ville">
+      </div>
+      <input type="tel" id="ship-phone" placeholder="Téléphone">
+      <p class="shipping-error" id="shippingError"></p>
+    </div>
+
     <div id="paypal-button-container"></div>
     <div id="applepay-button-container" style="margin-top:8px;"></div>
     <p class="cart-note">Paiement sécurisé via PayPal</p>
