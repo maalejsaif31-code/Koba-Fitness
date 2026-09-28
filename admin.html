@@ -374,6 +374,7 @@
   });
 
   function escapeHtml(str){ return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function formatPrice(n){ return (n || 0).toFixed(2).replace('.', ',') + ' \u20ac'; }
   function escapeAttr(str){ return (str || '').replace(/"/g,'&quot;'); }
 
   // Réduit une photo (souvent plusieurs Mo directement depuis un téléphone) à une
