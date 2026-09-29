@@ -69,6 +69,14 @@
   .btn-ghost:hover{color:var(--white);}
 
   .admin-tabs{display:flex;gap:6px;margin:26px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .views-badge{
+    display:flex;align-items:center;gap:8px;width:fit-content;
+    background:var(--bg-card);border:1px solid var(--border);
+    padding:10px 16px;margin-top:16px;font-size:13px;color:var(--grey);
+  }
+  .views-icon{font-size:15px;}
+  .views-badge #totalViewsCount{color:var(--white);font-weight:700;font-size:15px;}
+  .views-label{color:var(--grey-dim);}
   .admin-tab{background:transparent;color:var(--grey);padding:12px 18px;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-bottom:2px solid transparent;}
   .admin-tab.active{color:var(--white);border-bottom-color:var(--red);}
   .admin-panel{display:none;padding-bottom:60px;}
@@ -164,6 +172,12 @@
         <button id="logoutBtn" class="btn-ghost">Déconnexion</button>
       </div>
     </header>
+
+    <div class="views-badge" id="viewsBadge" style="display:none;">
+      <span class="views-icon">👁</span>
+      <span id="totalViewsCount">—</span>
+      <span class="views-label">vues du site</span>
+    </div>
 
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="products">Produits</button>
@@ -354,6 +368,7 @@
         renderPromosPanel();
         renderOrdersPanel();
         renderMessagesPanel();
+        renderViewsCount();
       } else {
         log('Aucune session active — écran de connexion affiché.');
         loginScreen.style.display = 'flex';
@@ -686,6 +701,18 @@
       alert("Erreur lors de l'ajout : " + err.message);
     }
   });
+
+  async function renderViewsCount(){
+    const badge = document.getElementById('viewsBadge');
+    const countEl = document.getElementById('totalViewsCount');
+    try{
+      const doc = await db.collection('stats').doc('site-views').get();
+      countEl.textContent = doc.exists ? (doc.data().total || 0).toLocaleString('fr-FR') : '0';
+      badge.style.display = 'flex';
+    } catch(err){
+      console.error('Erreur chargement compteur de vues :', err);
+    }
+  }
 
   async function getOrders(){
     const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();

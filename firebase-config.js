@@ -30,6 +30,12 @@ try {
   db = firebase.firestore();
   auth = firebase.auth();
   window.kobaFirebaseReady = true;
+
+  // Comptabilise cette visite (une unité à chaque chargement de page du site).
+  db.collection('stats').doc('site-views').set(
+    { total: firebase.firestore.FieldValue.increment(1) },
+    { merge: true }
+  ).catch(function(err){ console.error('Erreur compteur de vues :', err); });
 } catch (err) {
   console.error('Erreur d\'initialisation Firebase:', err);
   window.kobaFirebaseError = err.message || String(err);
