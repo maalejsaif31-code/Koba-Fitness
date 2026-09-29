@@ -6,6 +6,8 @@
 let cart = JSON.parse(localStorage.getItem('kobaCart') || '[]'); // {name, price, qty}
 let appliedPromo = JSON.parse(localStorage.getItem('kobaAppliedPromo') || 'null'); // {code, type, value}
 
+const SHIPPING_COST = 5;
+
 function saveCart(){ localStorage.setItem('kobaCart', JSON.stringify(cart)); }
 function savePromoState(){ localStorage.setItem('kobaAppliedPromo', JSON.stringify(appliedPromo)); }
 
@@ -21,9 +23,13 @@ function cartDiscount(subtotal){
   return Math.min(appliedPromo.value, subtotal);
 }
 
+function cartShipping(){
+  return cart.length > 0 ? SHIPPING_COST : 0;
+}
+
 function cartTotal(){
   const subtotal = cartSubtotal();
-  return Math.max(0, subtotal - cartDiscount(subtotal));
+  return Math.max(0, subtotal - cartDiscount(subtotal)) + cartShipping();
 }
 
 function addToCart(name, price){
@@ -59,11 +65,13 @@ function renderCart(){
 
   const subtotal = cartSubtotal();
   const discount = cartDiscount(subtotal);
+  const shipping = cartShipping();
   const total = cartTotal();
 
   const subtotalRow = document.getElementById('cartSubtotalRow');
   const discountRow = document.getElementById('cartDiscountRow');
-  if(subtotalRow) subtotalRow.style.display = appliedPromo ? 'flex' : 'none';
+  const shippingRow = document.getElementById('cartShippingRow');
+  if(subtotalRow) subtotalRow.style.display = cart.length > 0 ? 'flex' : 'none';
   if(document.getElementById('cartSubtotal')) document.getElementById('cartSubtotal').textContent = formatPrice(subtotal);
   if(discountRow) discountRow.style.display = appliedPromo ? 'flex' : 'none';
   if(document.getElementById('cartDiscountLabel') && appliedPromo){
@@ -71,6 +79,8 @@ function renderCart(){
       'Code ' + appliedPromo.code + (appliedPromo.type === 'percent' ? ' (-' + appliedPromo.value + '%)' : ' (remise fixe)');
   }
   if(document.getElementById('cartDiscount')) document.getElementById('cartDiscount').textContent = '- ' + formatPrice(discount);
+  if(shippingRow) shippingRow.style.display = cart.length > 0 ? 'flex' : 'none';
+  if(document.getElementById('cartShipping')) document.getElementById('cartShipping').textContent = formatPrice(shipping);
 
   totalEl.textContent = formatPrice(total);
   if(countEl) countEl.textContent = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -189,18 +199,34 @@ function saveShippingToStorage(){
 function paypalOrderConfig(){
   return {
     createOrder: function(data, actions){
+      const subtotal = cartSubtotal();
+      const discount = cartDiscount(subtotal);
+      const shipping = cartShipping();
       const total = cartTotal();
-      const shipping = getShippingData();
+      const shippingData = getShippingData();
       return actions.order.create({
         purchase_units: [{
-          amount: { value: total.toFixed(2), currency_code: 'EUR' },
+          amount: {
+            value: total.toFixed(2),
+            currency_code: 'EUR',
+            breakdown: {
+              item_total: { value: subtotal.toFixed(2), currency_code: 'EUR' },
+              shipping: { value: shipping.toFixed(2), currency_code: 'EUR' },
+              discount: { value: discount.toFixed(2), currency_code: 'EUR' }
+            }
+          },
+          items: cart.map(item => ({
+            name: item.name.slice(0, 127),
+            unit_amount: { value: item.price.toFixed(2), currency_code: 'EUR' },
+            quantity: String(item.qty)
+          })),
           shipping: {
-            name: { full_name: (shipping.firstName + ' ' + shipping.lastName).trim() },
+            name: { full_name: (shippingData.firstName + ' ' + shippingData.lastName).trim() },
             address: {
-              address_line_1: shipping.address,
-              address_line_2: shipping.address2 || '',
-              admin_area_2: shipping.city,
-              postal_code: shipping.zip,
+              address_line_1: shippingData.address,
+              address_line_2: shippingData.address2 || '',
+              admin_area_2: shippingData.city,
+              postal_code: shippingData.zip,
               country_code: 'FR'
             }
           }
@@ -220,6 +246,7 @@ function paypalOrderConfig(){
             email: auth.currentUser.email || '',
             shipping: shipping,
             items: cart.map(i => ({ name: i.name, price: i.price, qty: i.qty })),
+            shippingCost: cartShipping(),
             total: cartTotal(),
             promoCode: appliedPromo ? appliedPromo.code : null,
             paypalOrderId: data.orderID,

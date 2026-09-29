@@ -711,7 +711,8 @@
     list.innerHTML = orders.map(o => {
       const date = o.createdAt && o.createdAt.toDate ? o.createdAt.toDate().toLocaleString('fr-FR') : '—';
       const s = o.shipping || {};
-      const itemsList = (o.items || []).map(i => `${i.qty} × ${escapeHtml(i.name)} (${formatPrice(i.price)})`).join('<br>');
+      const itemsList = (o.items || []).map(i => `${i.qty} × ${escapeHtml(i.name)} (${formatPrice(i.price)})`).join('<br>')
+        + (o.shippingCost ? `<br><span style="color:var(--grey-dim);">Livraison : ${formatPrice(o.shippingCost)}</span>` : '');
       return `
         <div class="product-row" style="grid-template-columns:1fr auto;">
           <div>
